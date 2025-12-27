@@ -7,10 +7,10 @@ from fastapi import Depends, HTTPException, status, Request
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 import logging
 
-from ..database import get_database, Database
-from ..core.security import decode_access_token, TokenPayload
-from ..core.permissions import has_permission, Permission
-from ..core.exceptions import (
+from app.database import get_database, Database
+from app.core.security import decode_access_token, TokenPayload
+from app.core.permissions import has_permission, Permission
+from app.core.exceptions import (
     InvalidTokenError,
     TokenExpiredError,
     AccountDisabledError,

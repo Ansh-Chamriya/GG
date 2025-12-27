@@ -10,10 +10,10 @@ from fastapi.exceptions import RequestValidationError
 import logging
 import sys
 
-from .config import settings
-from .database import init_database, close_database, get_database
-from .api.v1.router import api_router
-from .core.exceptions import GearGuardException, to_http_exception
+from app.config import settings
+from app.database import init_database, close_database, get_database
+from app.api.v1.router import api_router
+from app.core.exceptions import GearGuardException, to_http_exception
 
 # ===========================================
 # Logging Configuration

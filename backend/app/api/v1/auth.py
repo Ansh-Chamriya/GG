@@ -8,8 +8,8 @@ from fastapi import APIRouter, Depends, HTTPException, status, Request, Backgrou
 from pydantic import BaseModel, EmailStr, Field
 import logging
 
-from ..deps import Db, CurrentUser, ClientInfo, get_current_user_optional
-from ...core import (
+from app.api.deps import Db, CurrentUser, ClientInfo, get_current_user_optional
+from app.core import (
     verify_password,
     get_password_hash,
     validate_password_strength,
@@ -20,16 +20,16 @@ from ...core import (
     generate_reset_token,
     TokenPayload,
 )
-from ...core.permissions import get_role_permissions, Role
-from ...core.exceptions import (
+from app.core.permissions import get_role_permissions, Role
+from app.core.exceptions import (
     InvalidCredentialsError,
     ResourceNotFoundError,
     ResourceAlreadyExistsError,
     ValidationError,
     to_http_exception,
 )
-from ...config import settings
-from ...core.email import send_email, get_welcome_email_content, get_reset_password_email_content
+from app.config import settings
+from app.core.email import send_email, get_welcome_email_content, get_reset_password_email_content
 
 logger = logging.getLogger(__name__)
 router = APIRouter()
