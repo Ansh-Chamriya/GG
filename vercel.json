@@ -5,23 +5,38 @@
             "src": "backend/app/main.py",
             "use": "@vercel/python",
             "config": {
-                "runtime": "python3.11",
                 "maxLambdaSize": "50mb"
             }
         }
     ],
     "routes": [
         {
-            "src": "/(.*)",
+            "src": "/api/(.*)",
+            "dest": "backend/app/main.py"
+        },
+        {
+            "src": "/docs",
+            "dest": "backend/app/main.py"
+        },
+        {
+            "src": "/redoc",
+            "dest": "backend/app/main.py"
+        },
+        {
+            "src": "/openapi.json",
+            "dest": "backend/app/main.py"
+        },
+        {
+            "src": "/health",
+            "dest": "backend/app/main.py"
+        },
+        {
+            "src": "/ready",
+            "dest": "backend/app/main.py"
+        },
+        {
+            "src": "^/$",
             "dest": "backend/app/main.py"
         }
-    ],
-    "build": {
-        "env": {
-            "PYTHONPATH": "backend"
-        }
-    },
-    "env": {
-        "PYTHONPATH": "backend"
-    }
+    ]
 }
