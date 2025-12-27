@@ -599,9 +599,7 @@ INSERT OR IGNORE INTO roles (id, name, description, level) VALUES
     ('role_super_admin', 'super_admin', 'Full system access, manages all organizations', 1),
     ('role_admin', 'admin', 'Organization-level admin, manages users & settings', 2),
     ('role_manager', 'manager', 'Manages equipment, work orders, and technicians', 3),
-    ('role_technician', 'technician', 'Performs maintenance, updates work orders', 4),
-    ('role_operator', 'operator', 'Views equipment, reports issues', 5),
-    ('role_viewer', 'viewer', 'Read-only access', 6);
+    ('role_technician', 'technician', 'Performs maintenance, updates work orders, reports issues', 4);
 
 -- ============================================
 -- SEED DATA: Default Permissions
@@ -682,6 +680,7 @@ INSERT OR IGNORE INTO role_permissions (id, role_id, permission_id) VALUES
     ('rp_admin_equip_read', 'role_admin', 'perm_equip_read'),
     ('rp_admin_equip_update', 'role_admin', 'perm_equip_update'),
     ('rp_admin_equip_delete', 'role_admin', 'perm_equip_delete'),
+    ('rp_admin_equip_report', 'role_admin', 'perm_equip_report'),
     ('rp_admin_wo_create', 'role_admin', 'perm_wo_create'),
     ('rp_admin_wo_read', 'role_admin', 'perm_wo_read'),
     ('rp_admin_wo_update', 'role_admin', 'perm_wo_update'),
@@ -710,6 +709,7 @@ INSERT OR IGNORE INTO role_permissions (id, role_id, permission_id) VALUES
     ('rp_mgr_equip_read', 'role_manager', 'perm_equip_read'),
     ('rp_mgr_equip_update', 'role_manager', 'perm_equip_update'),
     ('rp_mgr_equip_delete', 'role_manager', 'perm_equip_delete'),
+    ('rp_mgr_equip_report', 'role_manager', 'perm_equip_report'),
     ('rp_mgr_wo_create', 'role_manager', 'perm_wo_create'),
     ('rp_mgr_wo_read', 'role_manager', 'perm_wo_read'),
     ('rp_mgr_wo_update', 'role_manager', 'perm_wo_update'),
@@ -729,30 +729,17 @@ INSERT OR IGNORE INTO role_permissions (id, role_id, permission_id) VALUES
     ('rp_mgr_report_read', 'role_manager', 'perm_report_read'),
     ('rp_mgr_report_export', 'role_manager', 'perm_report_export');
 
--- Technician permissions
+-- Technician permissions (enhanced - can create work orders, report issues, view reports)
 INSERT OR IGNORE INTO role_permissions (id, role_id, permission_id) VALUES
     ('rp_tech_equip_read', 'role_technician', 'perm_equip_read'),
     ('rp_tech_equip_update', 'role_technician', 'perm_equip_update'),
+    ('rp_tech_equip_report', 'role_technician', 'perm_equip_report'),
+    ('rp_tech_wo_create', 'role_technician', 'perm_wo_create'),
     ('rp_tech_wo_read', 'role_technician', 'perm_wo_read'),
     ('rp_tech_wo_update', 'role_technician', 'perm_wo_update'),
     ('rp_tech_wo_complete', 'role_technician', 'perm_wo_complete'),
     ('rp_tech_sched_read', 'role_technician', 'perm_sched_read'),
     ('rp_tech_parts_read', 'role_technician', 'perm_parts_read'),
-    ('rp_tech_parts_use', 'role_technician', 'perm_parts_use');
+    ('rp_tech_parts_use', 'role_technician', 'perm_parts_use'),
+    ('rp_tech_report_read', 'role_technician', 'perm_report_read');
 
--- Operator permissions
-INSERT OR IGNORE INTO role_permissions (id, role_id, permission_id) VALUES
-    ('rp_op_equip_read', 'role_operator', 'perm_equip_read'),
-    ('rp_op_equip_report', 'role_operator', 'perm_equip_report'),
-    ('rp_op_wo_create', 'role_operator', 'perm_wo_create'),
-    ('rp_op_wo_read', 'role_operator', 'perm_wo_read'),
-    ('rp_op_sched_read', 'role_operator', 'perm_sched_read'),
-    ('rp_op_parts_read', 'role_operator', 'perm_parts_read');
-
--- Viewer permissions
-INSERT OR IGNORE INTO role_permissions (id, role_id, permission_id) VALUES
-    ('rp_view_equip_read', 'role_viewer', 'perm_equip_read'),
-    ('rp_view_wo_read', 'role_viewer', 'perm_wo_read'),
-    ('rp_view_sched_read', 'role_viewer', 'perm_sched_read'),
-    ('rp_view_parts_read', 'role_viewer', 'perm_parts_read'),
-    ('rp_view_report_read', 'role_viewer', 'perm_report_read');

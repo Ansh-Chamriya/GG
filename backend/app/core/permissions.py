@@ -83,8 +83,6 @@ class Role:
     ADMIN = "admin"
     MANAGER = "manager"
     TECHNICIAN = "technician"
-    OPERATOR = "operator"
-    VIEWER = "viewer"
 
 
 # Default permissions for each role
@@ -103,6 +101,7 @@ ROLE_PERMISSIONS: dict[str, list[str]] = {
         Permission.EQUIPMENT_READ,
         Permission.EQUIPMENT_UPDATE,
         Permission.EQUIPMENT_DELETE,
+        Permission.EQUIPMENT_REPORT_ISSUE,
         Permission.WORKORDER_CREATE,
         Permission.WORKORDER_READ,
         Permission.WORKORDER_UPDATE,
@@ -131,6 +130,7 @@ ROLE_PERMISSIONS: dict[str, list[str]] = {
         Permission.EQUIPMENT_READ,
         Permission.EQUIPMENT_UPDATE,
         Permission.EQUIPMENT_DELETE,
+        Permission.EQUIPMENT_REPORT_ISSUE,
         Permission.WORKORDER_CREATE,
         Permission.WORKORDER_READ,
         Permission.WORKORDER_UPDATE,
@@ -154,28 +154,14 @@ ROLE_PERMISSIONS: dict[str, list[str]] = {
     Role.TECHNICIAN: [
         Permission.EQUIPMENT_READ,
         Permission.EQUIPMENT_UPDATE,
+        Permission.EQUIPMENT_REPORT_ISSUE,
+        Permission.WORKORDER_CREATE,
         Permission.WORKORDER_READ,
         Permission.WORKORDER_UPDATE,
         Permission.WORKORDER_COMPLETE,
         Permission.SCHEDULE_READ,
         Permission.PARTS_READ,
         Permission.PARTS_USE,
-    ],
-    
-    Role.OPERATOR: [
-        Permission.EQUIPMENT_READ,
-        Permission.EQUIPMENT_REPORT_ISSUE,
-        Permission.WORKORDER_CREATE,
-        Permission.WORKORDER_READ,
-        Permission.SCHEDULE_READ,
-        Permission.PARTS_READ,
-    ],
-    
-    Role.VIEWER: [
-        Permission.EQUIPMENT_READ,
-        Permission.WORKORDER_READ,
-        Permission.SCHEDULE_READ,
-        Permission.PARTS_READ,
         Permission.REPORT_READ,
     ],
 }
@@ -292,8 +278,6 @@ def can_manage_role(manager_role: str, target_role: str) -> bool:
         Role.ADMIN: 2,
         Role.MANAGER: 3,
         Role.TECHNICIAN: 4,
-        Role.OPERATOR: 5,
-        Role.VIEWER: 6,
     }
     
     manager_level = role_hierarchy.get(manager_role, 99)

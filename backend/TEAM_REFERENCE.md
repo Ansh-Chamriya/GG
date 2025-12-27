@@ -40,9 +40,7 @@
 Level 1: super_admin   → Full system access (all organizations)
 Level 2: admin         → Organization admin (manage users, settings)
 Level 3: manager       → Manage equipment, work orders, teams
-Level 4: technician    → Perform maintenance, update work orders
-Level 5: operator      → View equipment, report issues
-Level 6: viewer        → Read-only access
+Level 4: technician    → Perform maintenance, report issues, update work orders
 ```
 
 ---

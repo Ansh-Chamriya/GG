@@ -165,9 +165,7 @@ Authorization: Bearer <access_token>
 | super_admin | 1 | Full system access |
 | admin | 2 | Organization admin |
 | manager | 3 | Equipment & work orders |
-| technician | 4 | Perform maintenance |
-| operator | 5 | View & report issues |
-| viewer | 6 | Read-only |
+| technician | 4 | Perform maintenance, report issues |
 
 ---
 

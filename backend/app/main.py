@@ -48,7 +48,7 @@ async def lifespan(app: FastAPI):
         db = init_database()
         logger.info("Database connection established")
         
-        # Run migrations if in development
+        # Run migrations in development mode
         if settings.is_development:
             try:
                 db.run_migrations("migrations")

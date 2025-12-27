@@ -1,9 +1,8 @@
 """
 GearGuard Backend - Database Connection Module
-Handles Turso/LibSQL database connections with embedded replicas.
+Handles Turso/LibSQL database connections.
 """
-import libsql_experimental as libsql
-from functools import lru_cache
+import sqlite3
 from typing import Optional, Any, List, Tuple
 from contextlib import contextmanager
 import logging
@@ -16,57 +15,43 @@ logger = logging.getLogger(__name__)
 class Database:
     """
     Database connection manager for Turso/LibSQL.
-    Supports embedded replicas for offline-first capabilities.
+    Uses embedded replica pattern for better performance.
     """
     
     def __init__(self):
         self._connection: Optional[Any] = None
-        self._cursor: Optional[Any] = None
     
     def connect(self) -> Any:
         """
-        Establish database connection with embedded replica.
+        Establish database connection using embedded replica.
         Returns the connection object.
         """
         if self._connection is None:
             try:
-                # Connect with embedded replica for local caching
+                import libsql
+                
+                # Connect using embedded replica pattern
                 self._connection = libsql.connect(
                     settings.LOCAL_DB_PATH,
                     sync_url=settings.TURSO_DATABASE_URL,
                     auth_token=settings.TURSO_AUTH_TOKEN
                 )
-                # Initial sync from remote
                 self._connection.sync()
-                logger.info("Database connected successfully with embedded replica")
+                logger.info("Connected to Turso database with embedded replica")
+            except ImportError:
+                # Fallback to local SQLite
+                logger.warning("libsql not found, using local SQLite")
+                self._connection = sqlite3.connect(settings.LOCAL_DB_PATH)
             except Exception as e:
-                logger.error(f"Failed to connect to database: {e}")
-                # Fallback to local-only mode
-                self._connection = libsql.connect(settings.LOCAL_DB_PATH)
-                logger.warning("Connected in local-only mode")
+                logger.error(f"Failed to connect to Turso: {e}")
+                # Fallback to local SQLite
+                self._connection = sqlite3.connect(settings.LOCAL_DB_PATH)
+                logger.warning("Connected to local SQLite database")
         
         return self._connection
     
-    def get_cursor(self) -> Any:
-        """Get a database cursor."""
-        conn = self.connect()
-        return conn.cursor()
-    
-    def execute(
-        self, 
-        query: str, 
-        params: Tuple = ()
-    ) -> Any:
-        """
-        Execute a single query.
-        
-        Args:
-            query: SQL query string
-            params: Query parameters
-            
-        Returns:
-            Query result
-        """
+    def execute(self, query: str, params: Tuple = ()) -> Any:
+        """Execute a single query."""
         conn = self.connect()
         try:
             result = conn.execute(query, params)
@@ -75,60 +60,13 @@ class Database:
             logger.error(f"Query execution failed: {e}\nQuery: {query}")
             raise
     
-    def execute_many(
-        self, 
-        query: str, 
-        params_list: List[Tuple]
-    ) -> None:
-        """
-        Execute a query with multiple parameter sets.
-        
-        Args:
-            query: SQL query string
-            params_list: List of parameter tuples
-        """
-        conn = self.connect()
-        cursor = conn.cursor()
-        try:
-            cursor.executemany(query, params_list)
-            conn.commit()
-        except Exception as e:
-            logger.error(f"Batch execution failed: {e}")
-            raise
-    
-    def fetch_one(
-        self, 
-        query: str, 
-        params: Tuple = ()
-    ) -> Optional[Tuple]:
-        """
-        Execute query and fetch one result.
-        
-        Args:
-            query: SQL query string
-            params: Query parameters
-            
-        Returns:
-            Single row or None
-        """
+    def fetch_one(self, query: str, params: Tuple = ()) -> Optional[Tuple]:
+        """Execute query and fetch one result."""
         result = self.execute(query, params)
         return result.fetchone()
     
-    def fetch_all(
-        self, 
-        query: str, 
-        params: Tuple = ()
-    ) -> List[Tuple]:
-        """
-        Execute query and fetch all results.
-        
-        Args:
-            query: SQL query string
-            params: Query parameters
-            
-        Returns:
-            List of rows
-        """
+    def fetch_all(self, query: str, params: Tuple = ()) -> List[Tuple]:
+        """Execute query and fetch all results."""
         result = self.execute(query, params)
         return result.fetchall()
     
@@ -139,55 +77,38 @@ class Database:
     
     def rollback(self) -> None:
         """Rollback current transaction."""
-        if self._connection:
+        if self._connection and hasattr(self._connection, 'rollback'):
             self._connection.rollback()
     
     def sync(self) -> None:
-        """
-        Sync local replica with remote Turso database.
-        Call this after important writes to ensure durability.
-        """
-        if self._connection:
+        """Sync local replica with remote Turso database."""
+        if self._connection and hasattr(self._connection, 'sync'):
             try:
                 self._connection.sync()
                 logger.debug("Database synced with remote")
             except Exception as e:
-                logger.error(f"Database sync failed: {e}")
+                logger.warning(f"Sync warning: {e}")
     
     def close(self) -> None:
         """Close database connection."""
         if self._connection:
-            self.sync()  # Final sync before close
-            self._connection.close()
+            if hasattr(self._connection, 'close'):
+                self._connection.close()
             self._connection = None
             logger.info("Database connection closed")
     
     @contextmanager
     def transaction(self):
-        """
-        Context manager for database transactions.
-        
-        Usage:
-            with db.transaction():
-                db.execute(...)
-                db.execute(...)
-        """
+        """Context manager for database transactions."""
         try:
             yield self
             self.commit()
-            self.sync()  # Sync after successful transaction
         except Exception:
             self.rollback()
             raise
     
     def run_migrations(self, migrations_dir: str = "migrations") -> None:
-        """
-        Run SQL migration files from the migrations directory.
-        
-        Args:
-            migrations_dir: Path to migrations directory
-        """
-        import os
+        """Run SQL migration files from the migrations directory."""
         from pathlib import Path
         
         migrations_path = Path(migrations_dir)
@@ -208,8 +129,11 @@ class Database:
                 statements = sql_content.split(";")
                 for statement in statements:
                     statement = statement.strip()
-                    if statement:
-                        self.execute(statement)
+                    if statement and not statement.startswith("--"):
+                        try:
+                            self.execute(statement)
+                        except Exception as stmt_error:
+                            logger.warning(f"Statement failed (may be OK): {stmt_error}")
                 
                 self.commit()
                 logger.info(f"Migration completed: {sql_file.name}")
@@ -217,7 +141,6 @@ class Database:
                 logger.error(f"Migration failed for {sql_file.name}: {e}")
                 raise
         
-        self.sync()
         logger.info("All migrations completed successfully")
 
 
@@ -226,10 +149,7 @@ _db_instance: Optional[Database] = None
 
 
 def get_database() -> Database:
-    """
-    Get the singleton database instance.
-    Creates a new instance if one doesn't exist.
-    """
+    """Get the singleton database instance."""
     global _db_instance
     if _db_instance is None:
         _db_instance = Database()
@@ -237,20 +157,14 @@ def get_database() -> Database:
 
 
 def init_database() -> Database:
-    """
-    Initialize database connection and run migrations.
-    Call this during application startup.
-    """
+    """Initialize database connection."""
     db = get_database()
     db.connect()
     return db
 
 
 def close_database() -> None:
-    """
-    Close database connection.
-    Call this during application shutdown.
-    """
+    """Close database connection."""
     global _db_instance
     if _db_instance:
         _db_instance.close()

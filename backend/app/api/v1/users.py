@@ -39,7 +39,7 @@ class UserCreateRequest(BaseModel):
     first_name: str = Field(..., min_length=1, max_length=100)
     last_name: str = Field(..., min_length=1, max_length=100)
     phone: Optional[str] = None
-    role: str = Role.VIEWER
+    role: str = Role.TECHNICIAN
 
 
 class UserUpdateRequest(BaseModel):
