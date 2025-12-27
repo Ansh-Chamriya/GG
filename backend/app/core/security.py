@@ -365,3 +365,15 @@ def generate_verification_token() -> tuple[str, str]:
     plain_token = secrets.token_urlsafe(32)
     hashed_token = hash_token(plain_token)
     return plain_token, hashed_token
+
+
+def utcnow_iso() -> str:
+    """
+    Get current UTC time as ISO format string.
+    Use this for database operations with libsql.
+    
+    Returns:
+        ISO 8601 formatted UTC datetime string
+    """
+    return datetime.utcnow().isoformat()
+

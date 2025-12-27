@@ -146,7 +146,7 @@ async def register(
     
     # Create or get organization
     org_id = request.organization_id
-    role = Role.VIEWER  # Default role when joining
+    role = Role.TECHNICIAN  # Default role when joining
     
     if request.organization_name:
         # Create new organization
@@ -158,7 +158,7 @@ async def register(
             INSERT INTO organizations (id, name, slug, created_at, updated_at)
             VALUES (?, ?, ?, ?, ?)
             """,
-            (org_id, request.organization_name, org_slug, datetime.utcnow(), datetime.utcnow())
+            (org_id, request.organization_name, org_slug, datetime.utcnow().isoformat(), datetime.utcnow().isoformat())
         )
         role = Role.ADMIN  # Creator becomes admin
     elif not org_id:
@@ -171,7 +171,7 @@ async def register(
             INSERT INTO organizations (id, name, slug, created_at, updated_at)
             VALUES (?, ?, ?, ?, ?)
             """,
-            (org_id, f"{request.first_name}'s Organization", org_slug, datetime.utcnow(), datetime.utcnow())
+            (org_id, f"{request.first_name}'s Organization", org_slug, datetime.utcnow().isoformat(), datetime.utcnow().isoformat())
         )
         role = Role.ADMIN
     
@@ -186,7 +186,7 @@ async def register(
     # Create user
     user_id = generate_id()
     password_hash = get_password_hash(request.password)
-    now = datetime.utcnow()
+    now = datetime.utcnow().isoformat()
     
     db.execute(
         """
@@ -226,8 +226,8 @@ async def register(
         (
             session_id, user_id, hash_token(token_pair.refresh_token),
             None, client_info.get("ip_address"), client_info.get("user_agent"),
-            True, datetime.utcnow() + timedelta(days=settings.REFRESH_TOKEN_EXPIRE_DAYS),
-            datetime.utcnow()
+            True, (datetime.utcnow() + timedelta(days=settings.REFRESH_TOKEN_EXPIRE_DAYS)).isoformat(),
+            datetime.utcnow().isoformat()
         )
     )
     
@@ -305,15 +305,15 @@ async def login(
         (
             session_id, user_id, hash_token(token_pair.refresh_token),
             None, client_info.get("ip_address"), client_info.get("user_agent"),
-            True, datetime.utcnow() + timedelta(days=settings.REFRESH_TOKEN_EXPIRE_DAYS),
-            datetime.utcnow()
+            True, (datetime.utcnow() + timedelta(days=settings.REFRESH_TOKEN_EXPIRE_DAYS)).isoformat(),
+            datetime.utcnow().isoformat()
         )
     )
     
     # Update last login
     db.execute(
         "UPDATE users SET last_login = ? WHERE id = ?",
-        (datetime.utcnow(), user_id)
+        (datetime.utcnow().isoformat(), user_id)
     )
     
     db.commit()
@@ -416,8 +416,8 @@ async def refresh_token(
         (
             new_session_id, payload.sub, hash_token(token_pair.refresh_token),
             None, client_info.get("ip_address"), client_info.get("user_agent"),
-            True, datetime.utcnow() + timedelta(days=settings.REFRESH_TOKEN_EXPIRE_DAYS),
-            datetime.utcnow()
+            True, (datetime.utcnow() + timedelta(days=settings.REFRESH_TOKEN_EXPIRE_DAYS)).isoformat(),
+            datetime.utcnow().isoformat()
         )
     )
     
@@ -454,7 +454,7 @@ async def forgot_password(
     
     # Generate reset token
     plain_token, hashed_token = generate_reset_token()
-    expires_at = datetime.utcnow() + timedelta(hours=1)
+    expires_at = (datetime.utcnow() + timedelta(hours=1)).isoformat()
     
     # Store token
     db.execute(
@@ -515,7 +515,7 @@ async def reset_password(
     password_hash = get_password_hash(request.new_password)
     db.execute(
         "UPDATE users SET password_hash = ?, updated_at = ? WHERE id = ?",
-        (password_hash, datetime.utcnow(), user_id)
+        (password_hash, datetime.utcnow().isoformat(), user_id)
     )
     
     # Mark token as used
@@ -613,7 +613,7 @@ async def update_current_user_profile(
     
     if updates:
         updates.append("updated_at = ?")
-        params.append(datetime.utcnow())
+        params.append(datetime.utcnow().isoformat())
         params.append(current_user.sub)
         
         db.execute(
@@ -661,7 +661,7 @@ async def change_password(
     new_hash = get_password_hash(request.new_password)
     db.execute(
         "UPDATE users SET password_hash = ?, updated_at = ? WHERE id = ?",
-        (new_hash, datetime.utcnow(), current_user.sub)
+        (new_hash, datetime.utcnow().isoformat(), current_user.sub)
     )
     
     db.commit()
