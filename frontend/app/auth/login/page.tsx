@@ -1,5 +1,6 @@
 "use client";
 
+import { Suspense } from "react";
 import { useState, useEffect } from "react";
 import type { ChangeEvent, FormEvent } from "react";
 import Link from "next/link";
@@ -7,7 +8,7 @@ import { useSearchParams } from "next/navigation";
 import { useAuth } from "@/app/lib/auth";
 import { Shield, Loader2, CheckCircle2, Users, Wrench, Settings, Crown } from "lucide-react";
 
-export default function LoginPage() {
+function LoginForm() {
   const { login, isLoading: authLoading } = useAuth();
   const searchParams = useSearchParams();
   const justRegistered = searchParams.get("registered") === "true";
@@ -232,22 +233,6 @@ export default function LoginPage() {
           )}
         </div>
 
-        {/* Remember Me
-        <div className="flex items-center gap-2">
-          <input
-            name="rememberMe"
-            type="checkbox"
-            checked={formData.rememberMe}
-            onChange={handleChange}
-            disabled={isLoading}
-            className="w-4 h-4 rounded accent-teal-600"
-          />
-          <label className="text-sm" style={{ color: "var(--foreground-muted)" }}>
-            Keep me signed in
-          </label>
-        </div>
-        */}
-
         {/* Submit Button */}
         <button
           type="submit"
@@ -347,5 +332,19 @@ export default function LoginPage() {
         </p>
       </div>
     </>
+  );
+}
+
+export default function LoginPage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="flex justify-center p-8">
+          <Loader2 className="w-8 h-8 animate-spin text-teal-600" />
+        </div>
+      }
+    >
+      <LoginForm />
+    </Suspense>
   );
 }
