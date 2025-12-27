@@ -1,28 +1,63 @@
-import React from 'react';
-import Link from 'next/link';
+"use client";
 
-export function WorkOrderHeader() {
-    return (
-        <div className="mb-8 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-            <div>
-                <h1 className="text-2xl font-bold tracking-tight text-gray-900 dark:text-white">
-                    Work Orders
-                </h1>
-                <p className="text-sm text-gray-500 dark:text-gray-400">
-                    Manage and track your maintenance tasks
-                </p>
-            </div>
-            <div className="flex gap-3">
-                {/* Placeholders for filters/actions */}
-                <button className="rounded-md border border-gray-200 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 dark:border-gray-800 dark:bg-gray-900 dark:text-gray-300 dark:hover:bg-gray-800">
-                    Filter
-                </button>
-                <Link href="/work-orders/new">
-                    <button className="rounded-md bg-black px-4 py-2 text-sm font-medium text-white hover:bg-gray-800 dark:bg-white dark:text-black dark:hover:bg-gray-200">
-                        + New Work Order
-                    </button>
-                </Link>
-            </div>
+import React from "react";
+import Link from "next/link";
+import { ClipboardList, Plus, Filter, RefreshCw } from "lucide-react";
+
+interface WorkOrderHeaderProps {
+  onRefresh?: () => void;
+  isLoading?: boolean;
+}
+
+export function WorkOrderHeader({
+  onRefresh,
+  isLoading,
+}: WorkOrderHeaderProps) {
+  return (
+    <div className="flex items-center justify-between mb-6">
+      <div className="flex items-center gap-3">
+        <div
+          className="w-12 h-12 rounded-xl flex items-center justify-center"
+          style={{ background: "var(--primary-100)" }}
+        >
+          <ClipboardList
+            className="w-6 h-6"
+            style={{ color: "var(--primary)" }}
+          />
         </div>
-    );
+        <div>
+          <h2
+            className="text-xl font-bold"
+            style={{ color: "var(--foreground)" }}
+          >
+            Work Orders
+          </h2>
+          <p className="text-sm" style={{ color: "var(--foreground-muted)" }}>
+            Manage and track your maintenance tasks
+          </p>
+        </div>
+      </div>
+      <div className="flex items-center gap-2">
+        <button className="btn btn-secondary">
+          <Filter className="w-4 h-4" />
+          Filter
+        </button>
+        {onRefresh && (
+          <button
+            onClick={onRefresh}
+            className="btn btn-secondary"
+            disabled={isLoading}
+          >
+            <RefreshCw
+              className={`w-4 h-4 ${isLoading ? "animate-spin" : ""}`}
+            />
+          </button>
+        )}
+        <Link href="/dashboard/work-orders/new" className="btn btn-primary">
+          <Plus className="w-4 h-4" />
+          New Work Order
+        </Link>
+      </div>
+    </div>
+  );
 }

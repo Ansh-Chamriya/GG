@@ -1,21 +1,43 @@
-import { MaintenanceSchedule } from '../types/schedule.types';
+"use client";
+
+import { Clock } from "lucide-react";
 
 interface ScheduleFrequencyTagProps {
-    type: MaintenanceSchedule['frequencyType'];
-    value: number;
+  type: string;
+  value: number;
 }
 
-export default function ScheduleFrequencyTag({ type, value }: ScheduleFrequencyTagProps) {
-    const formatFrequency = () => {
-        if (value === 1) {
-            return type.charAt(0).toUpperCase() + type.slice(1);
-        }
-        return `Every ${value} ${type.replace('ly', 's')}`;
-    };
+export default function ScheduleFrequencyTag({
+  type,
+  value,
+}: ScheduleFrequencyTagProps) {
+  const formatFrequency = () => {
+    const plural = value > 1 ? "s" : "";
 
-    return (
-        <span className="inline-flex items-center rounded-md bg-blue-50 px-2 py-1 text-xs font-medium text-blue-700 ring-1 ring-inset ring-blue-700/10 dark:bg-blue-900/20 dark:text-blue-400 dark:ring-blue-900/30">
-            {formatFrequency()}
-        </span>
-    );
+    switch (type) {
+      case "daily":
+        return value === 1 ? "Daily" : `Every ${value} day${plural}`;
+      case "weekly":
+        return value === 1 ? "Weekly" : `Every ${value} week${plural}`;
+      case "monthly":
+        return value === 1 ? "Monthly" : `Every ${value} month${plural}`;
+      case "yearly":
+        return value === 1 ? "Yearly" : `Every ${value} year${plural}`;
+      default:
+        return `Every ${value} ${type}${plural}`;
+    }
+  };
+
+  return (
+    <div
+      className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-medium"
+      style={{
+        background: "var(--background-secondary)",
+        color: "var(--foreground)",
+      }}
+    >
+      <Clock className="w-3 h-3" style={{ color: "var(--primary)" }} />
+      {formatFrequency()}
+    </div>
+  );
 }

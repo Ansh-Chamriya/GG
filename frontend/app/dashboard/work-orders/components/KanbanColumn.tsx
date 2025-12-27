@@ -1,59 +1,135 @@
-import React, { useMemo } from 'react';
-import { SortableContext, verticalListSortingStrategy } from '@dnd-kit/sortable';
-import { useDroppable } from '@dnd-kit/core';
-import { WorkOrder, WorkOrderStatus } from '../types/workorder.types';
-import { STATUS_CONFIG } from '../utils/statusConfig';
-import { WorkOrderCard } from './WorkOrderCard';
+"use client";
+
+import React, { useMemo } from "react";
+import {
+  SortableContext,
+  verticalListSortingStrategy,
+} from "@dnd-kit/sortable";
+import { useDroppable } from "@dnd-kit/core";
+import { WorkOrder, WorkOrderStatus } from "../types/workorder.types";
+import { STATUS_CONFIG } from "../utils/statusConfig";
+import { WorkOrderCard } from "./WorkOrderCard";
 
 interface KanbanColumnProps {
-    status: WorkOrderStatus;
-    workOrders: WorkOrder[];
-    onWorkOrderClick?: (workOrder: WorkOrder) => void;
+  status: WorkOrderStatus;
+  workOrders: WorkOrder[];
+  onWorkOrderClick?: (workOrder: WorkOrder) => void;
 }
 
-export function KanbanColumn({ status, workOrders, onWorkOrderClick }: KanbanColumnProps) {
-    const config = STATUS_CONFIG[status];
-    const { setNodeRef } = useDroppable({
-        id: status,
-    });
+export function KanbanColumn({
+  status,
+  workOrders,
+  onWorkOrderClick,
+}: KanbanColumnProps) {
+  const config = STATUS_CONFIG[status];
+  const { setNodeRef } = useDroppable({
+    id: status,
+  });
 
-    const workOrderIds = useMemo(() => workOrders.map((w) => w.id), [workOrders]);
+  const workOrderIds = useMemo(() => workOrders.map((w) => w.id), [workOrders]);
 
-    return (
-        <div className="flex h-full w-full flex-col rounded-2xl bg-gray-50/50 p-3 backdrop-blur-xl dark:bg-white/5">
-            <div className="mb-4 flex items-center justify-between px-2 pt-1">
-                <div className="flex items-center gap-2">
-                    <div className={`h-2.5 w-2.5 rounded-full ring-2 ring-white/50 ${config.bg.replace('bg-', 'bg-').split(' ')[0].replace('50', '500')}`} />
-                    <h3 className="font-semibold text-gray-900 dark:text-white">
-                        {config.label}
-                    </h3>
-                    <span className="flex h-5 min-w-5 items-center justify-center rounded-md bg-white px-2 text-xs font-semibold text-gray-500 shadow-sm ring-1 ring-gray-200 dark:bg-gray-800 dark:text-gray-400 dark:ring-gray-700">
-                        {workOrders.length}
-                    </span>
-                </div>
-            </div>
+  // Get color from status config
+  const getStatusColor = (status: WorkOrderStatus) => {
+    switch (status) {
+      case "pending":
+        return "var(--primary)";
+      case "in_progress":
+        return "var(--warning)";
+      case "completed":
+        return "var(--success)";
+      case "on_hold":
+        return "var(--info)";
+      case "cancelled":
+        return "var(--foreground-muted)";
+      default:
+        return "var(--foreground-muted)";
+    }
+  };
 
-            <div
-                ref={setNodeRef}
-                className="flex flex-1 flex-col gap-3 overflow-y-auto overflow-x-hidden rounded-xl bg-gray-100/50 p-2 transition-colors dark:bg-black/20"
-            >
-                <SortableContext items={workOrderIds} strategy={verticalListSortingStrategy}>
-                    {workOrders.map((wo) => (
-                        <WorkOrderCard
-                            key={wo.id}
-                            workOrder={wo}
-                            onClick={onWorkOrderClick ? () => onWorkOrderClick(wo) : undefined}
-                        />
-                    ))}
-                </SortableContext>
+  const statusColor = getStatusColor(status);
 
-                {workOrders.length === 0 && (
-                    <div className="flex h-32 flex-col items-center justify-center rounded-xl border-2 border-dashed border-gray-200 text-gray-400 dark:border-gray-800">
-                        <span className="text-sm">No tickets</span>
-                        <span className="text-xs opacity-60">Drop items here</span>
-                    </div>
-                )}
-            </div>
+  return (
+    <div
+      className="flex h-full w-full flex-col rounded-2xl p-3"
+      style={{ background: "var(--background-secondary)" }}
+    >
+      {/* Column Header */}
+      <div
+        className="mb-4 flex items-center justify-between p-3 rounded-xl"
+        style={{ background: "var(--background)" }}
+      >
+        <div className="flex items-center gap-2">
+          <div
+            className="w-3 h-3 rounded-full"
+            style={{ background: statusColor }}
+          />
+          <span
+            className="font-medium text-sm"
+            style={{ color: "var(--foreground)" }}
+          >
+            {config.label}
+          </span>
         </div>
-    );
+        <span
+          className="px-2.5 py-1 rounded-lg text-xs font-semibold"
+          style={{
+            background: "var(--background-secondary)",
+            color: "var(--foreground-muted)",
+          }}
+        >
+          {workOrders.length}
+        </span>
+      </div>
+
+      {/* Cards container */}
+      <div
+        ref={setNodeRef}
+        className="flex flex-1 flex-col gap-3 overflow-y-auto overflow-x-hidden rounded-xl p-2"
+        style={{ background: "var(--background-tertiary)" }}
+      >
+        <SortableContext
+          items={workOrderIds}
+          strategy={verticalListSortingStrategy}
+        >
+          {workOrders.map((wo, index) => (
+            <div
+              key={wo.id}
+              className="animate-fade-in"
+              style={{ animationDelay: `${index * 0.03}s` }}
+            >
+              <WorkOrderCard
+                workOrder={wo}
+                onClick={
+                  onWorkOrderClick ? () => onWorkOrderClick(wo) : undefined
+                }
+              />
+            </div>
+          ))}
+        </SortableContext>
+
+        {workOrders.length === 0 && (
+          <div
+            className="flex h-32 flex-col items-center justify-center rounded-xl"
+            style={{
+              border: "2px dashed var(--border)",
+              background: "var(--background-secondary)",
+            }}
+          >
+            <span
+              className="text-sm"
+              style={{ color: "var(--foreground-muted)" }}
+            >
+              No work orders
+            </span>
+            <span
+              className="text-xs mt-1"
+              style={{ color: "var(--foreground-muted)", opacity: 0.6 }}
+            >
+              Drop items here
+            </span>
+          </div>
+        )}
+      </div>
+    </div>
+  );
 }

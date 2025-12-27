@@ -187,7 +187,7 @@ async def register(
     
     # Create user
     user_id = generate_id()
-    password_hash = request.password
+    password_hash = get_password_hash(request.password)
     now = datetime.utcnow().isoformat()
     
     db.execute(
@@ -283,8 +283,8 @@ async def login(
         org_id, is_active, is_verified, role
     ) = user
     
-    # Verify password (plain text comparison)
-    if request.password != password_hash:
+    # Verify password using bcrypt
+    if not verify_password(request.password, password_hash):
         raise to_http_exception(InvalidCredentialsError())
     
     # Check if user is active
@@ -523,10 +523,10 @@ async def reset_password(
             detail="Invalid or expired reset token"
         )
     
-    # Update password (store as plain text)
+    # Update password with proper hash
     db.execute(
         "UPDATE users SET password_hash = ?, updated_at = ? WHERE id = ?",
-        (request.new_password, datetime.utcnow().isoformat(), user_id)
+        (get_password_hash(request.new_password), datetime.utcnow().isoformat(), user_id)
     )
     
     # Mark token as used
@@ -656,8 +656,8 @@ async def change_password(
     if not user:
         raise to_http_exception(ResourceNotFoundError("User", current_user.sub))
     
-    # Verify current password (plain text comparison)
-    if request.current_password != user[0]:
+    # Verify current password using bcrypt
+    if not verify_password(request.current_password, user[0]):
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="Current password is incorrect"
@@ -668,10 +668,10 @@ async def change_password(
     if not is_valid:
         raise to_http_exception(ValidationError(error_msg, field="new_password"))
     
-    # Update password (store as plain text)
+    # Update password with proper hash
     db.execute(
         "UPDATE users SET password_hash = ?, updated_at = ? WHERE id = ?",
-        (request.new_password, datetime.utcnow().isoformat(), current_user.sub)
+        (get_password_hash(request.new_password), datetime.utcnow().isoformat(), current_user.sub)
     )
     
     db.commit()
