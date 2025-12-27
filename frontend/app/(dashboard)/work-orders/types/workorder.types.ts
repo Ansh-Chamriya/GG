@@ -2,6 +2,19 @@ export type WorkOrderPriority = 'low' | 'medium' | 'high' | 'critical';
 export type WorkOrderStatus = 'pending' | 'in-progress' | 'in-review' | 'completed';
 export type WorkOrderType = 'maintenance' | 'repair' | 'installation' | 'inspection';
 
+export interface WorkOrderTask {
+    id: string;
+    text: string;
+    completed: boolean;
+}
+
+export interface WorkOrderComment {
+    id: string;
+    author: string;
+    message: string;
+    createdAt: string;
+}
+
 export interface WorkOrder {
     id: string;
     title: string;
@@ -15,4 +28,6 @@ export interface WorkOrder {
     };
     dueDate: string; // ISO string
     createdAt: string;
+    tasks?: WorkOrderTask[];
+    comments?: WorkOrderComment[];
 }

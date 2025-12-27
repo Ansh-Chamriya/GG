@@ -13,6 +13,15 @@ export const MOCK_WORK_ORDERS: WorkOrder[] = [
         },
         dueDate: '2025-01-15T09:00:00Z',
         createdAt: '2025-01-01T10:00:00Z',
+        tasks: [
+            { id: 't1', text: 'Inspect filters', completed: true },
+            { id: 't2', text: 'Clean coils', completed: false },
+            { id: 't3', text: 'Check refrigerant levels', completed: false },
+        ],
+        comments: [
+            { id: 'c1', author: 'System', message: 'Work order created', createdAt: '2025-01-01T10:00:00Z' },
+            { id: 'c2', author: 'Alex Johnson', message: 'Will start this tomorrow morning.', createdAt: '2025-01-01T14:30:00Z' },
+        ],
     },
     {
         id: 'WO-1002',

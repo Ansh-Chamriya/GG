@@ -8,9 +8,10 @@ import { WorkOrderCard } from './WorkOrderCard';
 interface KanbanColumnProps {
     status: WorkOrderStatus;
     workOrders: WorkOrder[];
+    onWorkOrderClick?: (workOrder: WorkOrder) => void;
 }
 
-export function KanbanColumn({ status, workOrders }: KanbanColumnProps) {
+export function KanbanColumn({ status, workOrders, onWorkOrderClick }: KanbanColumnProps) {
     const config = STATUS_CONFIG[status];
     const { setNodeRef } = useDroppable({
         id: status,
@@ -38,7 +39,11 @@ export function KanbanColumn({ status, workOrders }: KanbanColumnProps) {
             >
                 <SortableContext items={workOrderIds} strategy={verticalListSortingStrategy}>
                     {workOrders.map((wo) => (
-                        <WorkOrderCard key={wo.id} workOrder={wo} />
+                        <WorkOrderCard
+                            key={wo.id}
+                            workOrder={wo}
+                            onClick={onWorkOrderClick ? () => onWorkOrderClick(wo) : undefined}
+                        />
                     ))}
                 </SortableContext>
 

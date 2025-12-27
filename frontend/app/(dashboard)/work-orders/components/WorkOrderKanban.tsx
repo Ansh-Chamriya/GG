@@ -19,10 +19,12 @@ import { KanbanColumn } from './KanbanColumn';
 import { WorkOrderEmpty } from './WorkOrderEmpty';
 import { WorkOrderCardInner } from './WorkOrderCard';
 import { WorkOrder, WorkOrderStatus } from '../types/workorder.types';
+import { WorkOrderDrawer } from './drawer/WorkOrderDrawer';
 
 export function WorkOrderKanban() {
     const { workOrders, isLoading, error, updateLocalWorkOrder } = useWorkOrders();
     const [activeId, setActiveId] = useState<string | null>(null);
+    const [selectedWorkOrder, setSelectedWorkOrder] = useState<WorkOrder | null>(null);
 
     const sensors = useSensors(
         useSensor(PointerSensor, {
@@ -111,6 +113,21 @@ export function WorkOrderKanban() {
         return <WorkOrderEmpty />;
     }
 
+
+
+    const handleWorkOrderClick = (workOrder: WorkOrder) => {
+        setSelectedWorkOrder(workOrder);
+    };
+
+    const handleCloseDrawer = () => {
+        setSelectedWorkOrder(null);
+    };
+
+    const handleUpdateWorkOrder = (updatedWorkOrder: WorkOrder) => {
+        updateLocalWorkOrder(updatedWorkOrder);
+        setSelectedWorkOrder(updatedWorkOrder);
+    };
+
     return (
         <DndContext
             sensors={sensors}
@@ -124,6 +141,7 @@ export function WorkOrderKanban() {
                         <KanbanColumn
                             status={status}
                             workOrders={groupedWorkOrders[status]}
+                            onWorkOrderClick={handleWorkOrderClick}
                         />
                     </div>
                 ))}
@@ -136,6 +154,13 @@ export function WorkOrderKanban() {
                     </div>
                 ) : null}
             </DragOverlay>
+
+            <WorkOrderDrawer
+                workOrder={selectedWorkOrder}
+                open={!!selectedWorkOrder}
+                onClose={handleCloseDrawer}
+                onUpdate={handleUpdateWorkOrder}
+            />
         </DndContext>
     );
 }

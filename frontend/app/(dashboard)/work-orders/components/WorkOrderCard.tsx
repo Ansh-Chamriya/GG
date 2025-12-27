@@ -6,9 +6,10 @@ import { WorkOrder } from '../types/workorder.types';
 interface WorkOrderCardProps {
     workOrder: WorkOrder;
     isOverlay?: boolean;
+    onClick?: () => void;
 }
 
-export function WorkOrderCard({ workOrder, isOverlay }: WorkOrderCardProps) {
+export function WorkOrderCard({ workOrder, isOverlay, onClick }: WorkOrderCardProps) {
     const {
         attributes,
         listeners,
@@ -46,6 +47,7 @@ export function WorkOrderCard({ workOrder, isOverlay }: WorkOrderCardProps) {
             {...attributes}
             {...listeners}
             className="group relative flex cursor-grab flex-col gap-3 touch-none"
+            onClick={onClick}
         >
             <WorkOrderCardInner workOrder={workOrder} />
         </div>
