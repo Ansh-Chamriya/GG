@@ -26,3 +26,13 @@ dependencies = [
     "anyio>=4.12.0",
     "pydantic[email]>=2.12.5",
 ]
+
+[project]
+name = "gg"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+requires-python = ">=3.11"
+dependencies = [
+    "pydantic[email]>=2.12.5",
+]
