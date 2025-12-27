@@ -29,21 +29,21 @@ export function WorkOrderDrawerActions({ workOrder, onUpdate, onClose }: WorkOrd
             {workOrder.status === 'pending' && (
                 <button
                     type="button"
-                    onClick={() => handleStatusChange('in-progress')}
+                    onClick={() => handleStatusChange('in_progress')}
                     className="flex-1 rounded-md bg-indigo-600 px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-indigo-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600"
                 >
                     Start Work
                 </button>
             )}
 
-            {workOrder.status === 'in-progress' && (
+            {workOrder.status === 'in_progress' && (
                 <div className="flex flex-1 gap-2">
                     <button
                         type="button"
-                        onClick={() => handleStatusChange('in-review')}
+                        onClick={() => handleStatusChange('on_hold')}
                         className="flex-1 rounded-md bg-amber-600 px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-amber-500"
                     >
-                        Review
+                        Hold
                     </button>
                     <button
                         type="button"
@@ -55,13 +55,13 @@ export function WorkOrderDrawerActions({ workOrder, onUpdate, onClose }: WorkOrd
                 </div>
             )}
 
-            {workOrder.status === 'in-review' && (
+            {workOrder.status === 'on_hold' && (
                 <button
                     type="button"
-                    onClick={() => handleStatusChange('completed')}
-                    className="flex-1 rounded-md bg-green-600 px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-green-500"
+                    onClick={() => handleStatusChange('in_progress')}
+                    className="flex-1 rounded-md bg-indigo-600 px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-indigo-500"
                 >
-                    Approve & Complete
+                    Resume Work
                 </button>
             )}
         </div>

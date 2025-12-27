@@ -37,7 +37,7 @@ export const MOCK_WORK_ORDERS: WorkOrder[] = [
         id: 'WO-1003',
         title: 'Server Room Overheating',
         description: 'Investigate temperature alerts in Server Room B.',
-        status: 'in-progress',
+        status: 'in_progress',
         priority: 'critical',
         type: 'repair',
         assignee: {
@@ -76,7 +76,7 @@ export const MOCK_WORK_ORDERS: WorkOrder[] = [
         id: 'WO-1006',
         title: 'Leaking Faucet in Kitchen',
         description: 'Repair the dripping faucet in the break room kitchenette.',
-        status: 'in-review',
+        status: 'on_hold',
         priority: 'low',
         type: 'repair',
         assignee: {

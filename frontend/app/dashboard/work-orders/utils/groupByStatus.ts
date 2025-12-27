@@ -4,9 +4,10 @@ import { STATUS_ORDER } from './statusConfig';
 export const groupWorkOrdersByStatus = (workOrders: WorkOrder[]) => {
     const groups: Record<WorkOrderStatus, WorkOrder[]> = {
         pending: [],
-        'in-progress': [],
-        'in-review': [],
+        in_progress: [],
+        on_hold: [],
         completed: [],
+        cancelled: [],
     };
 
     workOrders.forEach((wo) => {

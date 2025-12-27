@@ -5,7 +5,7 @@ import type { ChangeEvent, FormEvent } from "react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { useAuth } from "@/app/lib/auth";
-import { Shield, Loader2, CheckCircle2 } from "lucide-react";
+import { Shield, Loader2, CheckCircle2, Users, Wrench, Settings, Crown } from "lucide-react";
 
 export default function LoginPage() {
   const { login, isLoading: authLoading } = useAuth();
@@ -252,12 +252,7 @@ export default function LoginPage() {
         <button
           type="submit"
           disabled={isLoading}
-          className="w-full rounded-xl py-3 font-medium transition-all disabled:opacity-50 flex items-center justify-center gap-2"
-          style={{
-            background:
-              "linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%)",
-            color: "white",
-          }}
+          className="w-full btn btn-primary py-3 rounded-xl"
         >
           {isLoading ? (
             <>
@@ -284,14 +279,71 @@ export default function LoginPage() {
         </Link>
       </div>
 
-      {/* Demo Accounts Notice */}
+      {/* Role-Based Demo Accounts */}
       <div
-        className="mt-6 p-4 rounded-xl text-center"
+        className="mt-6 p-4 rounded-xl"
         style={{ background: "var(--background-secondary)" }}
       >
-        <p className="text-xs" style={{ color: "var(--foreground-muted)" }}>
-          <strong>Demo Mode:</strong> Use any email with password
-          &quot;password123&quot;
+        <p className="text-xs font-semibold mb-3" style={{ color: "var(--foreground)" }}>
+          Role-Based Access Control
+        </p>
+        <div className="space-y-2">
+          {[
+            {
+              role: "Super Admin",
+              icon: <Crown className="w-4 h-4" />,
+              desc: "Full system access",
+              color: "#ef4444",
+            },
+            {
+              role: "Admin",
+              icon: <Shield className="w-4 h-4" />,
+              desc: "Organization access",
+              color: "#f59e0b",
+            },
+            {
+              role: "Manager",
+              icon: <Users className="w-4 h-4" />,
+              desc: "Team & schedules",
+              color: "#0d9488",
+            },
+            {
+              role: "Technician",
+              icon: <Wrench className="w-4 h-4" />,
+              desc: "Task execution",
+              color: "#10b981",
+            },
+          ].map((item) => (
+            <div
+              key={item.role}
+              className="flex items-center gap-2 p-2 rounded-lg transition-all cursor-default"
+              style={{ background: `${item.color}10` }}
+            >
+              <div
+                className="w-7 h-7 rounded-lg flex items-center justify-center"
+                style={{ background: `${item.color}20`, color: item.color }}
+              >
+                {item.icon}
+              </div>
+              <div className="flex-1">
+                <span
+                  className="text-xs font-medium"
+                  style={{ color: item.color }}
+                >
+                  {item.role}
+                </span>
+                <span
+                  className="text-xs ml-2"
+                  style={{ color: "var(--foreground-muted)" }}
+                >
+                  • {item.desc}
+                </span>
+              </div>
+            </div>
+          ))}
+        </div>
+        <p className="text-xs mt-3" style={{ color: "var(--foreground-subtle)" }}>
+          Register with your preferred role to explore
         </p>
       </div>
     </>

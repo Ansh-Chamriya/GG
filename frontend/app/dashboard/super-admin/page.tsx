@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState, useEffect, useCallback } from "react";
+import Link from "next/link";
 import {
   DashboardLayout,
   KPICard,
@@ -198,10 +199,10 @@ function OrganizationsTable({
               className={`w-4 h-4 ${isLoading ? "animate-spin" : ""}`}
             />
           </button>
-          <button className="btn btn-primary text-sm">
+          <Link href="/dashboard/organizations/new" className="btn btn-primary text-sm">
             <Plus className="w-4 h-4" />
             Add Org
-          </button>
+          </Link>
         </div>
       </div>
 
@@ -276,14 +277,14 @@ function OrganizationsTable({
                           org.subscription_tier === "enterprise"
                             ? "var(--primary-100)"
                             : org.subscription_tier === "pro"
-                            ? "var(--info-light)"
-                            : "var(--background-secondary)",
+                              ? "var(--info-light)"
+                              : "var(--background-secondary)",
                         color:
                           org.subscription_tier === "enterprise"
                             ? "var(--primary)"
                             : org.subscription_tier === "pro"
-                            ? "var(--info)"
-                            : "var(--foreground-muted)",
+                              ? "var(--info)"
+                              : "var(--foreground-muted)",
                       }}
                     >
                       {org.subscription_tier || "Free"}
@@ -291,9 +292,8 @@ function OrganizationsTable({
                   </td>
                   <td>
                     <span
-                      className={`badge ${
-                        org.is_active ? "badge-success" : "badge-neutral"
-                      }`}
+                      className={`badge ${org.is_active ? "badge-success" : "badge-neutral"
+                        }`}
                     >
                       {org.is_active ? "Active" : "Inactive"}
                     </span>
@@ -592,8 +592,8 @@ function SystemHealth() {
           isLoading
             ? "Checking..."
             : health.status === "healthy"
-            ? "All systems operational"
-            : "Issues detected"
+              ? "All systems operational"
+              : "Issues detected"
         }
       />
       <div className="space-y-3 mt-4">
@@ -620,13 +620,12 @@ function SystemHealth() {
             </div>
             <div className="flex items-center gap-2">
               <div
-                className={`w-2 h-2 rounded-full ${
-                  service.status === "operational"
+                className={`w-2 h-2 rounded-full ${service.status === "operational"
                     ? "bg-green-500"
                     : service.status === "degraded"
-                    ? "bg-yellow-500"
-                    : "bg-red-500"
-                }`}
+                      ? "bg-yellow-500"
+                      : "bg-red-500"
+                  }`}
               />
               <span
                 className="text-xs capitalize"
@@ -635,8 +634,8 @@ function SystemHealth() {
                     service.status === "operational"
                       ? "var(--success)"
                       : service.status === "degraded"
-                      ? "var(--warning)"
-                      : "var(--danger)",
+                        ? "var(--warning)"
+                        : "var(--danger)",
                 }}
               >
                 {service.status}

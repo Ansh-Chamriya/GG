@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -78,8 +79,15 @@
         }
 
         @keyframes float {
-            0%, 100% { transform: translate(0, 0) scale(1); }
-            50% { transform: translate(30px, 30px) scale(1.1); }
+
+            0%,
+            100% {
+                transform: translate(0, 0) scale(1);
+            }
+
+            50% {
+                transform: translate(30px, 30px) scale(1.1);
+            }
         }
 
         /* Header */
@@ -207,10 +215,25 @@
             text-align: center;
         }
 
-        .method-badge.post { background: rgba(16, 185, 129, 0.2); color: #10b981; }
-        .method-badge.get { background: rgba(99, 102, 241, 0.2); color: #6366f1; }
-        .method-badge.put { background: rgba(245, 158, 11, 0.2); color: #f59e0b; }
-        .method-badge.delete { background: rgba(239, 68, 68, 0.2); color: #ef4444; }
+        .method-badge.post {
+            background: rgba(16, 185, 129, 0.2);
+            color: #10b981;
+        }
+
+        .method-badge.get {
+            background: rgba(99, 102, 241, 0.2);
+            color: #6366f1;
+        }
+
+        .method-badge.put {
+            background: rgba(245, 158, 11, 0.2);
+            color: #f59e0b;
+        }
+
+        .method-badge.delete {
+            background: rgba(239, 68, 68, 0.2);
+            color: #ef4444;
+        }
 
         .endpoint-name {
             font-size: 13px;
@@ -382,7 +405,9 @@
         }
 
         @keyframes spin {
-            to { transform: rotate(360deg); }
+            to {
+                transform: rotate(360deg);
+            }
         }
 
         /* Response Panel */
@@ -546,23 +571,26 @@
             .container {
                 grid-template-columns: 1fr;
             }
-            
-            .sidebar, .response-panel {
+
+            .sidebar,
+            .response-panel {
                 display: none;
             }
         }
     </style>
 </head>
+
 <body>
     <div class="bg-decoration"></div>
-    
+
     <header class="header">
         <div class="logo">
             <div class="logo-icon">🛡️</div>
             <span class="logo-text">GearGuard Auth Tester</span>
         </div>
         <div class="api-url-container">
-            <input type="text" id="apiBaseUrl" class="api-url-input" value="http://localhost:8000" placeholder="API Base URL">
+            <input type="text" id="apiBaseUrl" class="api-url-input"
+                value="https://deploy2-gxn9-ixlus74gq-rudramodi360s-projects.vercel.app" placeholder="API Base URL">
         </div>
     </header>
 
@@ -572,7 +600,7 @@
             <div class="endpoint-list" id="endpointList">
                 <!-- Endpoints will be populated by JS -->
             </div>
-            
+
             <div class="sidebar-title" style="margin-top: 32px;">Stored Tokens</div>
             <div id="tokenStorage" style="padding: 0 12px;">
                 <p style="color: var(--text-muted); font-size: 12px;">No tokens stored yet</p>
@@ -734,7 +762,7 @@
 
         function selectEndpoint(id) {
             currentEndpoint = endpoints.find(ep => ep.id === id);
-            
+
             // Update active state
             document.querySelectorAll('.endpoint-item').forEach(el => {
                 el.classList.toggle('active', el.dataset.id === id);
@@ -813,11 +841,11 @@
 
         async function executeRequest(event) {
             if (event) event.preventDefault();
-            
+
             const ep = currentEndpoint;
             const baseUrl = document.getElementById('apiBaseUrl').value;
             const url = baseUrl + ep.path;
-            
+
             // Collect form data
             const body = {};
             ep.fields.forEach(field => {
@@ -840,7 +868,7 @@
             const btn = document.getElementById('sendBtn');
             btn.disabled = true;
             btn.innerHTML = '<span class="btn-loading"></span> Sending...';
-            
+
             const statusBadge = document.getElementById('statusBadge');
             statusBadge.textContent = 'Loading...';
             statusBadge.className = 'status-badge pending';
@@ -865,11 +893,11 @@
 
                 // Update response display
                 document.getElementById('responseTime').textContent = `${duration}ms`;
-                
+
                 if (response.ok) {
                     statusBadge.textContent = `${response.status} OK`;
                     statusBadge.className = 'status-badge success';
-                    
+
                     // Store tokens if present
                     if (data.access_token) {
                         storedTokens.access_token = data.access_token;
@@ -880,7 +908,7 @@
                         localStorage.setItem('refresh_token', data.refresh_token);
                     }
                     updateTokenDisplay();
-                    
+
                     // Show token section if tokens received
                     if (data.access_token || data.refresh_token) {
                         document.getElementById('tokenDisplay').innerHTML = `
@@ -914,7 +942,7 @@
             } catch (error) {
                 const endTime = performance.now();
                 const duration = Math.round(endTime - startTime);
-                
+
                 document.getElementById('responseTime').textContent = `${duration}ms`;
                 statusBadge.textContent = 'Error';
                 statusBadge.className = 'status-badge error';
@@ -973,4 +1001,5 @@
         }
     </script>
 </body>
+
 </html>
