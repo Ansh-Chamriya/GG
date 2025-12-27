@@ -3,21 +3,18 @@
 import { useState } from "react";
 import type { ChangeEvent, FormEvent } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
-import { EyeIcon, EyeSlashIcon } from "@heroicons/react/24/outline";
+import { ArrowLeftIcon } from "@heroicons/react/24/outline";
 
 type Status =
     | { type: "success"; message: string }
     | { type: "error"; message: string }
     | null;
 
-export default function LoginPage() {
-    const router = useRouter();
-    const [formData, setFormData] = useState({ email: "", password: "" });
-    const [errors, setErrors] = useState({ email: "", password: "" });
+export default function ForgotPasswordPage() {
+    const [email, setEmail] = useState("");
+    const [error, setError] = useState("");
     const [status, setStatus] = useState<Status>(null);
     const [loading, setLoading] = useState(false);
-    const [showPassword, setShowPassword] = useState(false);
 
     const validateEmail = (email: string) => {
         if (!email) return "Email is required";
@@ -27,36 +24,31 @@ export default function LoginPage() {
     };
 
     const handleChange = (e: ChangeEvent<HTMLInputElement>) => {
-        const { name, value } = e.target;
-        setFormData((p) => ({ ...p, [name]: value }));
-        setErrors((p) => ({ ...p, [name]: "" }));
+        setEmail(e.target.value);
+        setError("");
     };
 
     const handleSubmit = async (e: FormEvent) => {
         e.preventDefault();
         setStatus(null);
 
-        const emailError = validateEmail(formData.email);
-        const passwordError = !formData.password ? "Password is required" : "";
-
-        if (emailError || passwordError) {
-            setErrors({ email: emailError, password: passwordError });
+        const emailError = validateEmail(email);
+        if (emailError) {
+            setError(emailError);
             return;
         }
 
         setLoading(true);
+        // Simulate API call
         await new Promise((r) => setTimeout(r, 1500));
         setLoading(false);
 
+        // Always show success for security
         setStatus({
             type: "success",
-            message: "Login successful! Redirecting...",
+            message: "If an account exists for this email, we have sent a password reset link.",
         });
-
-        // Redirect to dashboard
-        setTimeout(() => {
-            router.push("/work-orders");
-        }, 1000);
+        setEmail("");
     };
 
     return (
@@ -67,85 +59,47 @@ export default function LoginPage() {
                     className="text-3xl font-bold"
                     style={{ color: "var(--foreground)" }}
                 >
-                    Welcome back
+                    Forgot your password?
                 </h1>
                 <p
                     className="text-sm"
                     style={{ color: "var(--foreground-muted)" }}
                 >
-                    Access your GearGuard workspace
+                    Enter your email to receive a reset link
                 </p>
             </div>
 
             {/* Form */}
-            <form onSubmit={handleSubmit} className="space-y-4">
+            <form onSubmit={handleSubmit} className="space-y-6 mt-8">
                 {/* Email */}
                 <div className="space-y-1.5">
                     <label
                         className="text-sm font-medium"
                         style={{ color: "var(--foreground)" }}
+                        htmlFor="email"
                     >
                         Email
                     </label>
                     <input
+                        id="email"
                         name="email"
-                        value={formData.email}
+                        type="email"
+                        value={email}
                         onChange={handleChange}
                         className="h-11 w-full rounded-lg px-3 text-sm outline-none bg-transparent"
                         style={{
                             border: "1px solid var(--border)",
                             color: "var(--foreground)",
                         }}
+                        placeholder="name@example.com"
                         onFocus={(e) =>
                         (e.currentTarget.style.boxShadow =
                             "0 0 0 2px var(--primary-100)")
                         }
                         onBlur={(e) => (e.currentTarget.style.boxShadow = "none")}
                     />
-                    {errors.email && (
-                        <p className="text-xs text-red-500">{errors.email}</p>
-                    )}
-                </div>
-
-                {/* Password */}
-                <div className="space-y-1.5">
-                    <label
-                        className="text-sm font-medium"
-                        style={{ color: "var(--foreground)" }}
-                    >
-                        Password
-                    </label>
-                    <div className="relative">
-                        <input
-                            name="password"
-                            type={showPassword ? "text" : "password"}
-                            value={formData.password}
-                            onChange={handleChange}
-                            className="h-11 w-full rounded-lg px-3 pr-10 text-sm outline-none bg-transparent"
-                            style={{
-                                border: "1px solid var(--border)",
-                                color: "var(--foreground)",
-                            }}
-                            onFocus={(e) =>
-                            (e.currentTarget.style.boxShadow =
-                                "0 0 0 2px var(--primary-100)")
-                            }
-                            onBlur={(e) => (e.currentTarget.style.boxShadow = "none")}
-                        />
-                        <button
-                            type="button"
-                            onClick={() => setShowPassword(!showPassword)}
-                            className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
-                        >
-                            {showPassword ? (
-                                <EyeSlashIcon className="h-4 w-4" />
-                            ) : (
-                                <EyeIcon className="h-4 w-4" />
-                            )}
-                        </button>
-                    </div>
-                    {errors.password && (
-                        <p className="text-xs text-red-500">{errors.password}</p>
+                    {error && (
+                        <p className="text-xs text-red-500">{error}</p>
                     )}
                 </div>
 
@@ -181,21 +135,19 @@ export default function LoginPage() {
                         color: "white",
                     }}
                 >
-                    {loading ? "Signing in…" : "Sign In"}
+                    {loading ? "Sending link..." : "Send reset link"}
                 </button>
             </form>
 
             {/* Footer */}
-            <div className="text-center text-sm">
-                <span style={{ color: "var(--foreground-muted)" }}>
-                    Don&apos;t have an account?{" "}
-                </span>
+            <div className="text-center text-sm mt-6">
                 <Link
-                    href="/auth/signup"
-                    className="font-semibold hover:underline"
-                    style={{ color: "var(--primary)" }}
+                    href="/auth/login"
+                    className="font-medium hover:underline inline-flex items-center gap-1"
+                    style={{ color: "var(--foreground-muted)" }}
                 >
-                    Sign up
+                    <ArrowLeftIcon className="h-3 w-3" />
+                    Back to login
                 </Link>
             </div>
         </>

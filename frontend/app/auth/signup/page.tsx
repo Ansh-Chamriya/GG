@@ -3,6 +3,7 @@
 import { useState } from "react";
 import type { ChangeEvent, FormEvent } from "react";
 import Link from "next/link";
+import { EyeIcon, EyeSlashIcon } from "@heroicons/react/24/outline";
 
 export default function SignupPage() {
     const [formData, setFormData] = useState({
@@ -22,6 +23,7 @@ export default function SignupPage() {
     });
 
     const [loading, setLoading] = useState(false);
+    const [showPassword, setShowPassword] = useState(false);
 
     const handleChange = (
         e: ChangeEvent<HTMLInputElement | HTMLSelectElement>
@@ -71,22 +73,37 @@ export default function SignupPage() {
                         >
                             {field.label}
                         </label>
-                        <input
-                            name={field.name}
-                            type={field.type}
-                            value={(formData as any)[field.name]}
-                            onChange={handleChange}
-                            className="h-11 w-full rounded-lg px-3 text-sm outline-none bg-transparent"
-                            style={{
-                                border: "1px solid var(--border)",
-                                color: "var(--foreground)",
-                            }}
-                            onFocus={(e) =>
-                            (e.currentTarget.style.boxShadow =
-                                "0 0 0 2px var(--primary-100)")
-                            }
-                            onBlur={(e) => (e.currentTarget.style.boxShadow = "none")}
-                        />
+                        <div className="relative">
+                            <input
+                                name={field.name}
+                                type={field.type === "password" && showPassword ? "text" : field.type}
+                                value={(formData as any)[field.name]}
+                                onChange={handleChange}
+                                className="h-11 w-full rounded-lg px-3 pr-10 text-sm outline-none bg-transparent"
+                                style={{
+                                    border: "1px solid var(--border)",
+                                    color: "var(--foreground)",
+                                }}
+                                onFocus={(e) =>
+                                (e.currentTarget.style.boxShadow =
+                                    "0 0 0 2px var(--primary-100)")
+                                }
+                                onBlur={(e) => (e.currentTarget.style.boxShadow = "none")}
+                            />
+                            {field.type === "password" && (
+                                <button
+                                    type="button"
+                                    onClick={() => setShowPassword(!showPassword)}
+                                    className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                                >
+                                    {showPassword ? (
+                                        <EyeSlashIcon className="h-4 w-4" />
+                                    ) : (
+                                        <EyeIcon className="h-4 w-4" />
+                                    )}
+                                </button>
+                            )}
+                        </div>
                         {(errors as any)[field.name] && (
                             <p className="text-xs text-red-500">
                                 {(errors as any)[field.name]}
