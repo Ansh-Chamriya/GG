@@ -252,12 +252,7 @@ export default function LoginPage() {
         <button
           type="submit"
           disabled={isLoading}
-          className="w-full rounded-xl py-3 font-medium transition-all disabled:opacity-50 flex items-center justify-center gap-2"
-          style={{
-            background:
-              "linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%)",
-            color: "white",
-          }}
+          className="w-full btn btn-primary py-3 rounded-xl"
         >
           {isLoading ? (
             <>

@@ -4,7 +4,7 @@ import { useState } from "react";
 import type { ChangeEvent, FormEvent } from "react";
 import Link from "next/link";
 import { useAuth } from "@/app/lib/auth";
-import { Shield, Loader2, Building2, Users, Wrench, Settings, Eye, Crown } from "lucide-react";
+import { Shield, Loader2, Building2, Users, Wrench, Settings, Eye, Crown, ArrowRight } from "lucide-react";
 
 export default function SignupPage() {
   const { register, isLoading: authLoading } = useAuth();

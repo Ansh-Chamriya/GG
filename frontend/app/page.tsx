@@ -88,12 +88,18 @@ function Header() {
           </a>
         </nav>
         <div className="flex items-center gap-3">
-          <button className="hidden sm:block text-sm font-medium px-4 py-2 rounded-lg btn-secondary">
-            View Demo
-          </button>
-          <button className="text-sm font-medium px-4 py-2 rounded-lg btn-primary">
+          <Link
+            href="/auth/login"
+            className="hidden sm:inline-flex btn btn-ghost text-sm font-medium"
+          >
+            Log in
+          </Link>
+          <Link
+            href="/auth/sign-up"
+            className="btn btn-primary text-sm font-medium"
+          >
             Get Started
-          </button>
+          </Link>
         </div>
       </div>
     </header>
@@ -135,16 +141,16 @@ function HeroSection() {
             <div className="flex flex-wrap gap-4">
               <Link
                 href="/auth/sign-up"
-                className="btn-primary px-6 py-3 rounded-xl font-medium flex items-center gap-2 animate-pulse-glow"
+                className="btn btn-primary px-6 py-3 rounded-xl font-medium flex items-center gap-2 animate-pulse-glow"
               >
                 Get Started
                 <ArrowRight className="w-4 h-4" />
               </Link>
               <Link
-                href="#"
-                className="btn-secondary px-6 py-3 rounded-xl font-medium flex items-center gap-2"
+                href="#features"
+                className="btn btn-secondary px-6 py-3 rounded-xl font-medium flex items-center gap-2"
               >
-                View Demo
+                How It Works
                 <ChevronRight className="w-4 h-4" />
               </Link>
             </div>
@@ -383,9 +389,8 @@ function DashboardMockup() {
               {[...Array(31)].map((_, i) => (
                 <div
                   key={i}
-                  className={`text-[9px] py-0.5 rounded ${
-                    i === 26 ? "text-white" : ""
-                  } ${[4, 11, 18].includes(i) ? "font-bold" : ""}`}
+                  className={`text-[9px] py-0.5 rounded ${i === 26 ? "text-white" : ""
+                    } ${[4, 11, 18].includes(i) ? "font-bold" : ""}`}
                   style={{
                     backgroundColor:
                       i === 26 ? "var(--primary)" : "transparent",
@@ -393,8 +398,8 @@ function DashboardMockup() {
                       i === 26
                         ? "white"
                         : [4, 11, 18].includes(i)
-                        ? "var(--primary)"
-                        : "var(--foreground-muted)",
+                          ? "var(--primary)"
+                          : "var(--foreground-muted)",
                   }}
                 >
                   {i + 1}
@@ -429,9 +434,8 @@ function KanbanCard({
 
   return (
     <div
-      className={`rounded-lg p-2 mb-2 bg-white shadow-sm ${
-        completed ? "opacity-60" : ""
-      }`}
+      className={`rounded-lg p-2 mb-2 bg-white shadow-sm ${completed ? "opacity-60" : ""
+        }`}
       style={{ border: "1px solid var(--border-light)" }}
     >
       <div
