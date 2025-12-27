@@ -5,7 +5,7 @@ Handles JWT token generation, password hashing, and authentication utilities.
 from datetime import datetime, timedelta
 from typing import Optional, Dict, Any
 from jose import JWTError, jwt
-from passlib.context import CryptContext
+import bcrypt
 from pydantic import BaseModel
 import ulid
 import logging
@@ -13,9 +13,6 @@ import logging
 from ..config import settings
 
 logger = logging.getLogger(__name__)
-
-# Password hashing context
-pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
 
 # ===========================================
@@ -67,7 +64,11 @@ def verify_password(plain_password: str, hashed_password: str) -> bool:
         True if password matches, False otherwise
     """
     try:
-        return pwd_context.verify(plain_password, hashed_password)
+        # bcrypt requires bytes
+        return bcrypt.checkpw(
+            plain_password.encode('utf-8'), 
+            hashed_password.encode('utf-8')
+        )
     except Exception as e:
         logger.error(f"Password verification failed: {e}")
         return False
@@ -83,7 +84,11 @@ def get_password_hash(password: str) -> str:
     Returns:
         Bcrypt hash of the password
     """
-    return pwd_context.hash(password)
+    # bcrypt returns bytes, we need string for storage
+    return bcrypt.hashpw(
+        password.encode('utf-8'), 
+        bcrypt.gensalt()
+    ).decode('utf-8')
 
 
 def validate_password_strength(password: str) -> tuple[bool, str]:
