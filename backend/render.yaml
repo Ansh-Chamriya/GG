@@ -1,0 +1,30 @@
+services:
+  - type: web
+    name: gearguard-api
+    runtime: python
+    rootDir: backend
+    buildCommand: pip install -r requirements.txt
+    startCommand: uvicorn app.main:app --host 0.0.0.0 --port $PORT
+    envVars:
+      - key: PYTHON_VERSION
+        value: "3.11"
+      - key: APP_ENV
+        value: production
+      - key: LOG_LEVEL
+        value: INFO
+      - key: RUN_MIGRATIONS
+        value: "true"
+      # Database - Set these in Render Dashboard as secrets
+      - key: TURSO_DATABASE_URL
+        sync: false  # Set in Dashboard
+      - key: TURSO_AUTH_TOKEN
+        sync: false  # Set in Dashboard
+      # JWT - Set in Render Dashboard as secret
+      - key: JWT_SECRET_KEY
+        sync: false  # Set in Dashboard
+      # Super Admin Credentials - Set in Render Dashboard
+      - key: SUPER_ADMIN_EMAIL
+        sync: false  # Set in Dashboard (e.g., admin@yourcompany.com)
+      - key: SUPER_ADMIN_PASSWORD
+        sync: false  # Set in Dashboard (use a strong password!)
+    healthCheckPath: /health

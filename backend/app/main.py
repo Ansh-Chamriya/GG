@@ -9,9 +9,10 @@ from fastapi.responses import JSONResponse
 from fastapi.exceptions import RequestValidationError
 import logging
 import sys
+import uuid
 
 from app.config import settings
-from app.database import init_database, close_database, get_database
+from app.database import init_database, close_database, get_database, Database
 from app.api.v1.router import api_router
 from app.core.exceptions import GearGuardException, to_http_exception
 
@@ -28,6 +29,77 @@ logging.basicConfig(
 )
 
 logger = logging.getLogger(__name__)
+
+
+# ===========================================
+# Super Admin Creation
+# ===========================================
+
+async def create_super_admin_if_not_exists(db: Database) -> None:
+    """Create super admin user if it doesn't exist."""
+    from passlib.context import CryptContext
+    
+    pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
+    
+    # Check if super admin email is configured
+    if not settings.SUPER_ADMIN_EMAIL or not settings.SUPER_ADMIN_PASSWORD:
+        logger.info("Super admin credentials not configured, skipping creation")
+        return
+    
+    # Check if super admin already exists
+    result = db.fetch_one(
+        "SELECT id FROM users WHERE email = ?",
+        (settings.SUPER_ADMIN_EMAIL,)
+    )
+    
+    if result:
+        logger.info(f"Super admin user already exists: {settings.SUPER_ADMIN_EMAIL}")
+        return
+    
+    # Create default organization for super admin if it doesn't exist
+    org_id = "org_system"
+    org_result = db.fetch_one(
+        "SELECT id FROM organizations WHERE id = ?",
+        (org_id,)
+    )
+    
+    if not org_result:
+        logger.info("Creating system organization for super admin...")
+        db.execute(
+            """
+            INSERT INTO organizations (id, name, slug, is_active)
+            VALUES (?, ?, ?, ?)
+            """,
+            (org_id, "System", "system", True)
+        )
+        logger.info("System organization created")
+    
+    # Create super admin user
+    user_id = f"user_{uuid.uuid4().hex[:12]}"
+    password_hash = pwd_context.hash(settings.SUPER_ADMIN_PASSWORD)
+    
+    logger.info(f"Creating super admin user: {settings.SUPER_ADMIN_EMAIL}")
+    db.execute(
+        """
+        INSERT INTO users (
+            id, email, password_hash, first_name, last_name,
+            role_id, organization_id, is_active, is_verified
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+        """,
+        (
+            user_id,
+            settings.SUPER_ADMIN_EMAIL,
+            password_hash,
+            "Super",
+            "Admin",
+            "role_super_admin",
+            org_id,
+            True,
+            True
+        )
+    )
+    
+    logger.info(f"Super admin user created successfully: {settings.SUPER_ADMIN_EMAIL}")
 
 
 # ===========================================
@@ -48,13 +120,22 @@ async def lifespan(app: FastAPI):
         db = init_database()
         logger.info("Database connection established")
         
-        # Run migrations in development mode
-        if settings.is_development:
+        # Run migrations (in development, or when RUN_MIGRATIONS is set for first deploy)
+        import os
+        run_migrations = settings.is_development or os.getenv("RUN_MIGRATIONS", "").lower() == "true"
+        if run_migrations:
             try:
                 db.run_migrations("migrations")
                 logger.info("Database migrations completed")
             except Exception as e:
-                logger.warning(f"Migration skipped or failed: {e}")
+                # Don't block startup on migration failures - tables may already exist
+                logger.warning(f"Migration skipped or failed (this may be OK if tables already exist): {e}")
+        
+        # Create super admin user if it doesn't exist
+        try:
+            await create_super_admin_if_not_exists(db)
+        except Exception as e:
+            logger.warning(f"Super admin creation skipped or failed: {e}")
         
         logger.info(f"GearGuard Backend started successfully in {settings.APP_ENV} mode")
         

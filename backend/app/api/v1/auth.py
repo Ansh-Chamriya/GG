@@ -46,6 +46,7 @@ class RegisterRequest(BaseModel):
     first_name: str = Field(..., min_length=1, max_length=100)
     last_name: str = Field(..., min_length=1, max_length=100)
     phone: Optional[str] = None
+    role: Optional[str] = None
     organization_name: Optional[str] = None  # If creating new org
     organization_id: Optional[str] = None    # If joining existing org
 
@@ -148,7 +149,7 @@ async def register(
     
     # Create or get organization
     org_id = request.organization_id
-    role = Role.TECHNICIAN  # Default role when joining
+    role = request.role or Role.TECHNICIAN  # Default role when joining
     
     if request.organization_name:
         # Create new organization
@@ -162,7 +163,8 @@ async def register(
             """,
             (org_id, request.organization_name, org_slug, datetime.utcnow().isoformat(), datetime.utcnow().isoformat())
         )
-        role = Role.ADMIN  # Creator becomes admin
+        if not request.role:
+            role = Role.ADMIN  # Creator becomes admin by default if no role specified
     elif not org_id:
         # Create a default organization for the user
         org_id = generate_id()
@@ -175,8 +177,12 @@ async def register(
             """,
             (org_id, f"{request.first_name}'s Organization", org_slug, datetime.utcnow().isoformat(), datetime.utcnow().isoformat())
         )
-        role = Role.ADMIN
-    
+        if not request.role:
+            role = Role.ADMIN
+            
+    # Validate role
+    if role not in [Role.SUPER_ADMIN, Role.ADMIN, Role.MANAGER, Role.TECHNICIAN]:
+        role = Role.TECHNICIAN    
     # Get role ID
     role_row = db.fetch_one("SELECT id FROM roles WHERE name = ?", (role,))
     if not role_row:

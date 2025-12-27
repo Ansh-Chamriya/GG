@@ -110,8 +110,16 @@ class Database:
                 
                 # Check if we have Turso URL (indicates remote database)
                 if settings.TURSO_DATABASE_URL and settings.TURSO_AUTH_TOKEN:
+                    # Convert WebSocket URL to HTTP URL if needed
+                    # Turso HTTP client requires https:// not wss://
+                    db_url = settings.TURSO_DATABASE_URL
+                    if db_url.startswith('wss://'):
+                        db_url = db_url.replace('wss://', 'https://', 1)
+                    elif db_url.startswith('ws://'):
+                        db_url = db_url.replace('ws://', 'http://', 1)
+                    
                     self._connection = libsql_client.create_client_sync(
-                        url=settings.TURSO_DATABASE_URL,
+                        url=db_url,
                         auth_token=settings.TURSO_AUTH_TOKEN
                     )
                     self._is_http_client = True
@@ -228,15 +236,26 @@ class Database:
     
     def commit(self) -> None:
         """Commit current transaction with reconnection support."""
-        if self._connection:
-            try:
-                self._connection.commit()
-            except Exception as e:
-                if self._is_connection_error(e):
-                    logger.warning(f"Commit failed due to connection error: {e}")
-                    # Connection lost during commit - data may be lost
-                    self._connection = None
-                raise
+        if not self._connection:
+            return
+        
+        # HTTP client (ClientSync) auto-commits and doesn't have commit method
+        if self._is_http_client:
+            logger.debug("HTTP client auto-commits, skipping explicit commit")
+            return
+        
+        if not hasattr(self._connection, 'commit'):
+            logger.debug("Connection does not support commit")
+            return
+        
+        try:
+            self._connection.commit()
+        except Exception as e:
+            if self._is_connection_error(e):
+                logger.warning(f"Commit failed due to connection error: {e}")
+                # Connection lost during commit - data may be lost
+                self._connection = None
+            raise
     
     def rollback(self) -> None:
         """Rollback current transaction."""
