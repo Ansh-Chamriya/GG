@@ -322,12 +322,8 @@ async def readiness_check():
 
 
 # ===========================================
-# Serverless Handler (Vercel/AWS Lambda)
+# Serverless Handler (Vercel)
 # ===========================================
 
-try:
-    from mangum import Mangum
-    handler = Mangum(app, lifespan="off")
-except ImportError:
-    # Mangum not available, running locally
-    handler = None
+# Vercel's @vercel/python runtime automatically detects the FastAPI app
+# Just ensure `app` is available at module level (which it already is)

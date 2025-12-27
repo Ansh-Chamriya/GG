@@ -1,9 +1,8 @@
 # GearGuard Backend Dependencies for Vercel Serverless
 # =======================================================
 
-# Core Framework - Older stable versions that work on Vercel
+# Core Framework
 fastapi==0.103.2
-mangum==0.17.0
 
 # Database - Turso/LibSQL HTTP client (serverless compatible)
 libsql-client
