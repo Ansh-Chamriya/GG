@@ -1,5 +1,5 @@
 import { MOCK_WORK_ORDERS } from '../mock/workorders.mock';
-import { WorkOrder } from '../types/workorder.types';
+import { WorkOrder, WorkOrderStatus } from '../types/workorder.types';
 
 // Simulate API delay
 const delay = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
@@ -28,6 +28,18 @@ class WorkOrdersApi {
         const wo = this.workOrders.find(w => w.id === id);
         if (!wo) throw new Error('Not found');
         return wo;
+    }
+
+    async createWorkOrder(workOrder: Omit<WorkOrder, 'id' | 'createdAt' | 'status'> & { status?: WorkOrderStatus }): Promise<WorkOrder> {
+        await delay(600);
+        const newWorkOrder: WorkOrder = {
+            ...workOrder,
+            id: `WO-${1000 + this.workOrders.length + 1}`,
+            createdAt: new Date().toISOString(),
+            status: workOrder.status || 'pending',
+        };
+        this.workOrders.push(newWorkOrder);
+        return newWorkOrder;
     }
 }
 

@@ -1,5 +1,5 @@
 export type WorkOrderPriority = 'low' | 'medium' | 'high' | 'critical';
-export type WorkOrderStatus = 'backlog' | 'todo' | 'in-progress' | 'in-review' | 'completed';
+export type WorkOrderStatus = 'pending' | 'in-progress' | 'in-review' | 'completed';
 export type WorkOrderType = 'maintenance' | 'repair' | 'installation' | 'inspection';
 
 export interface WorkOrder {

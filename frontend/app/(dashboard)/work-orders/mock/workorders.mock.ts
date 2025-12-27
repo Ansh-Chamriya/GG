@@ -5,7 +5,7 @@ export const MOCK_WORK_ORDERS: WorkOrder[] = [
         id: 'WO-1001',
         title: 'HVAC System Maintenance',
         description: 'Quarterly maintenance check for the main building HVAC system.',
-        status: 'todo',
+        status: 'pending',
         priority: 'high',
         type: 'maintenance',
         assignee: {
@@ -18,7 +18,7 @@ export const MOCK_WORK_ORDERS: WorkOrder[] = [
         id: 'WO-1002',
         title: 'Replace Printer Cartridges',
         description: 'Replace toner in the 2nd floor marketing office printer.',
-        status: 'backlog',
+        status: 'pending',
         priority: 'low',
         type: 'maintenance',
         dueDate: '2025-01-20T17:00:00Z',
@@ -41,7 +41,7 @@ export const MOCK_WORK_ORDERS: WorkOrder[] = [
         id: 'WO-1004',
         title: 'Install New Security Cameras',
         description: 'Mount and configure 3 new cameras in the loading dock area.',
-        status: 'todo',
+        status: 'pending',
         priority: 'medium',
         type: 'installation',
         assignee: {

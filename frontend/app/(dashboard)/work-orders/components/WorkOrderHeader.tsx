@@ -1,4 +1,5 @@
 import React from 'react';
+import Link from 'next/link';
 
 export function WorkOrderHeader() {
     return (
@@ -16,9 +17,11 @@ export function WorkOrderHeader() {
                 <button className="rounded-md border border-gray-200 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 dark:border-gray-800 dark:bg-gray-900 dark:text-gray-300 dark:hover:bg-gray-800">
                     Filter
                 </button>
-                <button className="rounded-md bg-black px-4 py-2 text-sm font-medium text-white hover:bg-gray-800 dark:bg-white dark:text-black dark:hover:bg-gray-200">
-                    + New Work Order
-                </button>
+                <Link href="/work-orders/new">
+                    <button className="rounded-md bg-black px-4 py-2 text-sm font-medium text-white hover:bg-gray-800 dark:bg-white dark:text-black dark:hover:bg-gray-200">
+                        + New Work Order
+                    </button>
+                </Link>
             </div>
         </div>
     );

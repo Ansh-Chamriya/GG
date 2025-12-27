@@ -3,8 +3,7 @@ import { STATUS_ORDER } from './statusConfig';
 
 export const groupWorkOrdersByStatus = (workOrders: WorkOrder[]) => {
     const groups: Record<WorkOrderStatus, WorkOrder[]> = {
-        backlog: [],
-        todo: [],
+        pending: [],
         'in-progress': [],
         'in-review': [],
         completed: [],
