@@ -1,5 +1,5 @@
 export type WorkOrderPriority = 'low' | 'medium' | 'high' | 'critical';
-export type WorkOrderStatus = 'pending' | 'in-progress' | 'in-review' | 'completed';
+export type WorkOrderStatus = 'pending' | 'in_progress' | 'on_hold' | 'completed' | 'cancelled';
 export type WorkOrderType = 'maintenance' | 'repair' | 'installation' | 'inspection';
 
 export interface WorkOrderTask {

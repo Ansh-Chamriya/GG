@@ -29,6 +29,7 @@ import {
   AlertTriangle,
   Package,
   Eye,
+  Crown,
 } from "lucide-react";
 
 // ============ TYPES ============
@@ -266,6 +267,169 @@ const roleColors: Record<UserRole, string> = {
   viewer: "var(--foreground-muted)",
 };
 
+// Role configuration with icons and descriptions for enhanced visual display
+export const roleConfig: Record<
+  UserRole,
+  {
+    icon: React.ReactNode;
+    color: string;
+    bgColor: string;
+    label: string;
+    description: string;
+    gradient: string;
+  }
+> = {
+  super_admin: {
+    icon: <Crown className="w-4 h-4" />,
+    color: "var(--danger)",
+    bgColor: "var(--danger-light)",
+    label: "Super Admin",
+    description: "Full system access across all organizations",
+    gradient: "linear-gradient(135deg, #ef4444 0%, #dc2626 100%)",
+  },
+  admin: {
+    icon: <Shield className="w-4 h-4" />,
+    color: "var(--warning)",
+    bgColor: "var(--warning-light)",
+    label: "Administrator",
+    description: "Full access to organization settings & users",
+    gradient: "linear-gradient(135deg, #f59e0b 0%, #d97706 100%)",
+  },
+  manager: {
+    icon: <Users className="w-4 h-4" />,
+    color: "var(--primary)",
+    bgColor: "var(--primary-light)",
+    label: "Manager",
+    description: "Manage teams, schedules & work orders",
+    gradient: "linear-gradient(135deg, #0d9488 0%, #0f766e 100%)",
+  },
+  technician: {
+    icon: <Wrench className="w-4 h-4" />,
+    color: "var(--success)",
+    bgColor: "var(--success-light)",
+    label: "Technician",
+    description: "Execute tasks & report equipment issues",
+    gradient: "linear-gradient(135deg, #10b981 0%, #059669 100%)",
+  },
+  operator: {
+    icon: <Settings className="w-4 h-4" />,
+    color: "var(--info)",
+    bgColor: "var(--info-light)",
+    label: "Operator",
+    description: "Operate equipment & report issues",
+    gradient: "linear-gradient(135deg, #3b82f6 0%, #2563eb 100%)",
+  },
+  viewer: {
+    icon: <Eye className="w-4 h-4" />,
+    color: "var(--foreground-muted)",
+    bgColor: "var(--background-tertiary)",
+    label: "Viewer",
+    description: "View-only access to dashboards & reports",
+    gradient: "linear-gradient(135deg, #6b7280 0%, #4b5563 100%)",
+  },
+};
+
+// ============ ROLE BADGE COMPONENT ============
+interface RoleBadgeProps {
+  role: UserRole;
+  size?: "sm" | "md" | "lg";
+  showIcon?: boolean;
+  showDescription?: boolean;
+  variant?: "default" | "pill" | "card";
+}
+
+export function RoleBadge({
+  role,
+  size = "md",
+  showIcon = true,
+  showDescription = false,
+  variant = "default",
+}: RoleBadgeProps) {
+  const config = roleConfig[role];
+
+  const sizeStyles = {
+    sm: { padding: "0.25rem 0.5rem", fontSize: "0.75rem", iconSize: "w-3 h-3" },
+    md: { padding: "0.375rem 0.75rem", fontSize: "0.875rem", iconSize: "w-4 h-4" },
+    lg: { padding: "0.5rem 1rem", fontSize: "1rem", iconSize: "w-5 h-5" },
+  };
+
+  if (variant === "card") {
+    return (
+      <div
+        className="rounded-xl p-4 animate-fade-in"
+        style={{
+          background: config.bgColor,
+          border: `1px solid ${config.color}30`,
+        }}
+      >
+        <div className="flex items-center gap-3">
+          <div
+            className="w-10 h-10 rounded-xl flex items-center justify-center"
+            style={{ background: config.gradient }}
+          >
+            <span className="text-white">{config.icon}</span>
+          </div>
+          <div>
+            <div
+              className="font-semibold text-sm"
+              style={{ color: config.color }}
+            >
+              {config.label}
+            </div>
+            {showDescription && (
+              <p
+                className="text-xs"
+                style={{ color: "var(--foreground-muted)" }}
+              >
+                {config.description}
+              </p>
+            )}
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  if (variant === "pill") {
+    return (
+      <span
+        className="inline-flex items-center gap-1.5 rounded-full font-medium transition-all animate-scale-in"
+        style={{
+          padding: sizeStyles[size].padding,
+          fontSize: sizeStyles[size].fontSize,
+          background: config.gradient,
+          color: "white",
+          boxShadow: `0 2px 8px ${config.color}40`,
+        }}
+      >
+        {showIcon && (
+          <span className={sizeStyles[size].iconSize}>{config.icon}</span>
+        )}
+        {config.label}
+      </span>
+    );
+  }
+
+  // Default variant
+  return (
+    <span
+      className="inline-flex items-center gap-1.5 rounded-lg font-medium"
+      style={{
+        padding: sizeStyles[size].padding,
+        fontSize: sizeStyles[size].fontSize,
+        background: config.bgColor,
+        color: config.color,
+        border: `1px solid ${config.color}30`,
+      }}
+    >
+      {showIcon && (
+        <span className={sizeStyles[size].iconSize}>{config.icon}</span>
+      )}
+      {config.label}
+    </span>
+  );
+}
+
 // ============ SIDEBAR COMPONENT ============
 export function Sidebar({ role, collapsed = false, onToggle }: SidebarProps) {
   const pathname = usePathname();
@@ -278,9 +442,8 @@ export function Sidebar({ role, collapsed = false, onToggle }: SidebarProps) {
 
   return (
     <aside
-      className={`sidebar fixed left-0 top-0 z-40 ${
-        collapsed ? "collapsed" : ""
-      }`}
+      className={`sidebar fixed left-0 top-0 z-40 ${collapsed ? "collapsed" : ""
+        }`}
       style={{
         width: collapsed
           ? "var(--sidebar-collapsed-width)"
@@ -302,19 +465,14 @@ export function Sidebar({ role, collapsed = false, onToggle }: SidebarProps) {
           <Shield className="w-5 h-5 text-white" />
         </div>
         {!collapsed && (
-          <div className="animate-fade-in">
+          <div className="animate-fade-in flex-1">
             <div
               className="font-semibold text-base"
               style={{ color: "var(--foreground)" }}
             >
               GearGuard
             </div>
-            <div
-              className="text-xs"
-              style={{ color: "var(--foreground-muted)" }}
-            >
-              {ROLE_LABELS[role]}
-            </div>
+            <RoleBadge role={role} size="sm" variant="default" />
           </div>
         )}
       </div>
@@ -328,9 +486,8 @@ export function Sidebar({ role, collapsed = false, onToggle }: SidebarProps) {
             <Link
               key={item.href}
               href={item.href}
-              className={`sidebar-nav-item relative ${
-                isActive ? "active" : ""
-              }`}
+              className={`sidebar-nav-item relative ${isActive ? "active" : ""
+                }`}
               style={{ animationDelay: `${index * 0.05}s` }}
             >
               <span
@@ -402,8 +559,7 @@ export function Topbar({ title, notificationCount = 0 }: TopbarProps) {
   const role = user?.role || "viewer";
   const userName = getUserDisplayName();
   const userInitials = user
-    ? `${user.first_name?.[0] || ""}${
-        user.last_name?.[0] || ""
+    ? `${user.first_name?.[0] || ""}${user.last_name?.[0] || ""
       }`.toUpperCase() || user.email[0].toUpperCase()
     : "U";
 
@@ -460,7 +616,7 @@ export function Topbar({ title, notificationCount = 0 }: TopbarProps) {
         >
           <div
             className="w-9 h-9 rounded-full flex items-center justify-center text-sm font-semibold"
-            style={{ background: roleColors[role], color: "white" }}
+            style={{ background: roleConfig[role]?.gradient || roleColors[role], color: "white" }}
           >
             {userInitials}
           </div>
@@ -471,12 +627,7 @@ export function Topbar({ title, notificationCount = 0 }: TopbarProps) {
             >
               {userName}
             </div>
-            <div
-              className="text-xs"
-              style={{ color: "var(--foreground-muted)" }}
-            >
-              {ROLE_LABELS[role]}
-            </div>
+            <RoleBadge role={role} size="sm" variant="default" showIcon={true} />
           </div>
           <ChevronDown
             className="w-4 h-4 hidden md:block"
@@ -616,9 +767,8 @@ export function KPICard({
         </div>
         {trend && (
           <span
-            className={`kpi-trend ${
-              trend.isPositive ? "kpi-trend-up" : "kpi-trend-down"
-            }`}
+            className={`kpi-trend ${trend.isPositive ? "kpi-trend-up" : "kpi-trend-down"
+              }`}
           >
             {trend.isPositive ? "↑" : "↓"} {Math.abs(trend.value)}%
           </span>
@@ -1014,9 +1164,8 @@ export function DataTable<T extends { id: string }>({
               <tr
                 key={item.id}
                 onClick={() => onRowClick?.(item)}
-                className={`animate-fade-in ${
-                  onRowClick ? "cursor-pointer hover:bg-gray-50" : ""
-                }`}
+                className={`animate-fade-in ${onRowClick ? "cursor-pointer hover:bg-gray-50" : ""
+                  }`}
                 style={{ animationDelay: `${index * 0.05}s` }}
               >
                 {columns.map((col) => (
@@ -1024,10 +1173,10 @@ export function DataTable<T extends { id: string }>({
                     {col.render
                       ? col.render(item)
                       : String(
-                          (item as Record<string, unknown>)[
-                            col.key as string
-                          ] || "-"
-                        )}
+                        (item as Record<string, unknown>)[
+                        col.key as string
+                        ] || "-"
+                      )}
                   </td>
                 ))}
               </tr>
