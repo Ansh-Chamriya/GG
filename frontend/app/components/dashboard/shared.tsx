@@ -51,7 +51,7 @@ interface TopbarProps {
 }
 
 // ============ NAVIGATION CONFIG ============
-// Updated to match backend role names (snake_case)
+// Updated to use shared routes for common components
 const navigationConfig: Record<UserRole, NavItem[]> = {
   super_admin: [
     {
@@ -61,37 +61,37 @@ const navigationConfig: Record<UserRole, NavItem[]> = {
     },
     {
       label: "Organizations",
-      href: "/dashboard/super-admin/organizations",
+      href: "/dashboard/organizations",
       icon: <Building2 className="w-5 h-5" />,
     },
     {
-      label: "All Equipment",
-      href: "/dashboard/super-admin/equipment",
+      label: "Equipment",
+      href: "/dashboard/equipment",
       icon: <Settings className="w-5 h-5" />,
     },
     {
-      label: "All Work Orders",
-      href: "/dashboard/super-admin/workorders",
+      label: "Work Orders",
+      href: "/dashboard/work-orders",
       icon: <ClipboardList className="w-5 h-5" />,
     },
     {
-      label: "Users & Roles",
-      href: "/dashboard/super-admin/users",
+      label: "Users",
+      href: "/dashboard/users",
       icon: <Users className="w-5 h-5" />,
     },
     {
       label: "Analytics",
-      href: "/dashboard/super-admin/analytics",
+      href: "/dashboard/analytics",
       icon: <BarChart3 className="w-5 h-5" />,
     },
     {
-      label: "System Settings",
-      href: "/dashboard/super-admin/settings",
+      label: "Settings",
+      href: "/dashboard/settings",
       icon: <Database className="w-5 h-5" />,
     },
     {
       label: "Audit Logs",
-      href: "/dashboard/super-admin/logs",
+      href: "/dashboard/audit-logs",
       icon: <FileText className="w-5 h-5" />,
     },
   ],
@@ -103,37 +103,42 @@ const navigationConfig: Record<UserRole, NavItem[]> = {
     },
     {
       label: "Equipment",
-      href: "/dashboard/admin/equipment",
+      href: "/dashboard/equipment",
       icon: <Settings className="w-5 h-5" />,
     },
     {
       label: "Work Orders",
-      href: "/dashboard/admin/workorders",
+      href: "/dashboard/work-orders",
       icon: <ClipboardList className="w-5 h-5" />,
     },
     {
       label: "Schedules",
-      href: "/dashboard/admin/schedules",
+      href: "/dashboard/schedules",
       icon: <Calendar className="w-5 h-5" />,
     },
     {
       label: "Teams",
-      href: "/dashboard/admin/teams",
+      href: "/dashboard/teams",
       icon: <Users className="w-5 h-5" />,
     },
     {
-      label: "Parts Inventory",
-      href: "/dashboard/admin/parts",
+      label: "Parts",
+      href: "/dashboard/parts",
       icon: <Package className="w-5 h-5" />,
     },
     {
+      label: "Locations",
+      href: "/dashboard/locations",
+      icon: <Building2 className="w-5 h-5" />,
+    },
+    {
       label: "Reports",
-      href: "/dashboard/admin/reports",
+      href: "/dashboard/reports",
       icon: <BarChart3 className="w-5 h-5" />,
     },
     {
       label: "Settings",
-      href: "/dashboard/admin/settings",
+      href: "/dashboard/settings",
       icon: <Wrench className="w-5 h-5" />,
     },
   ],
@@ -145,32 +150,37 @@ const navigationConfig: Record<UserRole, NavItem[]> = {
     },
     {
       label: "Kanban Board",
-      href: "/dashboard/manager/kanban",
+      href: "/dashboard/kanban",
       icon: <Kanban className="w-5 h-5" />,
     },
     {
       label: "Calendar",
-      href: "/dashboard/manager/calendar",
+      href: "/dashboard/calendar",
       icon: <Calendar className="w-5 h-5" />,
     },
     {
       label: "Equipment",
-      href: "/dashboard/manager/equipment",
+      href: "/dashboard/equipment",
       icon: <Settings className="w-5 h-5" />,
     },
     {
-      label: "My Team",
-      href: "/dashboard/manager/team",
+      label: "Work Orders",
+      href: "/dashboard/work-orders",
+      icon: <ClipboardList className="w-5 h-5" />,
+    },
+    {
+      label: "Teams",
+      href: "/dashboard/teams",
       icon: <Users className="w-5 h-5" />,
     },
     {
       label: "Parts",
-      href: "/dashboard/manager/parts",
+      href: "/dashboard/parts",
       icon: <Package className="w-5 h-5" />,
     },
     {
       label: "Reports",
-      href: "/dashboard/manager/reports",
+      href: "/dashboard/reports",
       icon: <BarChart3 className="w-5 h-5" />,
     },
   ],
@@ -182,22 +192,22 @@ const navigationConfig: Record<UserRole, NavItem[]> = {
     },
     {
       label: "Kanban",
-      href: "/dashboard/technician/kanban",
+      href: "/dashboard/kanban",
       icon: <Kanban className="w-5 h-5" />,
     },
     {
       label: "Calendar",
-      href: "/dashboard/technician/calendar",
+      href: "/dashboard/calendar",
       icon: <Calendar className="w-5 h-5" />,
     },
     {
       label: "Equipment",
-      href: "/dashboard/technician/equipment",
+      href: "/dashboard/equipment",
       icon: <Settings className="w-5 h-5" />,
     },
     {
       label: "History",
-      href: "/dashboard/technician/history",
+      href: "/dashboard/history",
       icon: <Clock className="w-5 h-5" />,
     },
   ],
@@ -209,17 +219,17 @@ const navigationConfig: Record<UserRole, NavItem[]> = {
     },
     {
       label: "Equipment",
-      href: "/dashboard/operator/equipment",
+      href: "/dashboard/equipment",
       icon: <Settings className="w-5 h-5" />,
     },
     {
       label: "Report Issue",
-      href: "/dashboard/operator/report-issue",
+      href: "/dashboard/report-issue",
       icon: <AlertTriangle className="w-5 h-5" />,
     },
     {
       label: "My Requests",
-      href: "/dashboard/operator/requests",
+      href: "/dashboard/my-requests",
       icon: <ClipboardList className="w-5 h-5" />,
     },
   ],
@@ -231,17 +241,17 @@ const navigationConfig: Record<UserRole, NavItem[]> = {
     },
     {
       label: "Equipment",
-      href: "/dashboard/viewer/equipment",
+      href: "/dashboard/equipment",
       icon: <Eye className="w-5 h-5" />,
     },
     {
       label: "Work Orders",
-      href: "/dashboard/viewer/workorders",
+      href: "/dashboard/work-orders",
       icon: <ClipboardList className="w-5 h-5" />,
     },
     {
       label: "Reports",
-      href: "/dashboard/viewer/reports",
+      href: "/dashboard/reports",
       icon: <BarChart3 className="w-5 h-5" />,
     },
   ],

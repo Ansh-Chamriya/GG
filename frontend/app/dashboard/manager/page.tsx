@@ -1,651 +1,416 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import {
   DashboardLayout,
-  KPICard,
   SectionHeader,
   StatusBadge,
   PriorityBadge,
   Avatar,
-  OverdueIndicator,
+  EmptyState,
+  SkeletonTable,
 } from "@/app/components/dashboard/shared";
 import {
-  ClipboardList,
-  AlertTriangle,
-  CheckCircle2,
-  Clock,
-  Plus,
-  MoreHorizontal,
-  Calendar as CalendarIcon,
+  workorderService,
+  teamService,
+  scheduleService,
+  userService,
+} from "@/app/lib/api/services";
+import {
+  WorkOrder,
+  Team,
+  MaintenanceSchedule,
   User,
+} from "@/app/lib/api/config";
+import {
+  ClipboardList,
+  Users,
+  Calendar,
+  Clock,
   ChevronLeft,
   ChevronRight,
-  Timer,
-  Zap,
-  ArrowRight,
-  GripVertical,
-  MapPin,
   Wrench,
+  AlertTriangle,
+  RefreshCw,
+  Plus,
+  GripVertical,
+  User as UserIcon,
+  MapPin,
+  AlertCircle,
 } from "lucide-react";
 
 // ============ TYPES ============
-type RequestStatus = "new" | "in-progress" | "repaired" | "scrap";
-type Priority = "low" | "medium" | "high" | "urgent";
+type KanbanColumn = "new" | "in_progress" | "completed" | "cancelled";
 
-interface KanbanTask {
+interface KanbanCard {
   id: string;
+  work_order_number: string;
   title: string;
-  equipment: string;
-  priority: Priority;
-  assignee?: { name: string; avatar?: string };
-  dueDate?: string;
-  isOverdue?: boolean;
-  duration?: string;
-  location?: string;
+  priority: string;
+  status: string;
+  equipment?: { name: string };
+  assigned_user?: User;
+  due_date?: string;
 }
 
-// ============ MOCK DATA ============
-const kpiData = [
-  {
-    label: "New Requests",
-    value: 8,
-    icon: <ClipboardList className="w-6 h-6" />,
-    color: "var(--info)",
-  },
-  {
-    label: "In Progress",
-    value: 12,
-    icon: <Clock className="w-6 h-6" />,
-    color: "var(--warning)",
-  },
-  {
-    label: "Overdue",
-    value: 3,
-    icon: <AlertTriangle className="w-6 h-6" />,
-    color: "var(--danger)",
-  },
-  {
-    label: "Completed Today",
-    value: 5,
-    icon: <CheckCircle2 className="w-6 h-6" />,
-    trend: { value: 25, isPositive: true },
-    color: "var(--success)",
-  },
-];
+// ============ HOOKS ============
+function useWorkOrders() {
+  const [workOrders, setWorkOrders] = useState<WorkOrder[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
-const kanbanData: Record<RequestStatus, KanbanTask[]> = {
-  new: [
-    {
-      id: "REQ-101",
-      title: "HVAC Filter Replacement",
-      equipment: "HVAC Unit #12",
-      priority: "high",
-      location: "Building A",
-    },
-    {
-      id: "REQ-102",
-      title: "Server Cooling Issue",
-      equipment: "Server Rack A",
-      priority: "urgent",
-      location: "Server Room",
-      isOverdue: true,
-    },
-    {
-      id: "REQ-103",
-      title: "Conveyor Belt Alignment",
-      equipment: "Conveyor #3",
-      priority: "medium",
-      location: "Floor 2",
-    },
-  ],
-  "in-progress": [
-    {
-      id: "REQ-098",
-      title: "Motor Replacement",
-      equipment: "CNC Machine #5",
-      priority: "high",
-      assignee: { name: "John Smith" },
-      duration: "2h 15m",
-      location: "Manufacturing",
-    },
-    {
-      id: "REQ-099",
-      title: "Electrical Panel Check",
-      equipment: "Panel B-12",
-      priority: "medium",
-      assignee: { name: "Mike Johnson" },
-      duration: "45m",
-      location: "Building B",
-    },
-    {
-      id: "REQ-100",
-      title: "Forklift Tire Change",
-      equipment: "Forklift FL-03",
-      priority: "low",
-      assignee: { name: "Tom Wilson" },
-      duration: "1h 30m",
-      isOverdue: true,
-      location: "Dock B",
-    },
-  ],
-  repaired: [
-    {
-      id: "REQ-095",
-      title: "Generator Service",
-      equipment: "Generator #2",
-      priority: "medium",
-      assignee: { name: "Sarah Davis" },
-      duration: "3h 45m",
-      location: "Basement",
-    },
-    {
-      id: "REQ-096",
-      title: "AC Unit Repair",
-      equipment: "AC Unit #8",
-      priority: "high",
-      assignee: { name: "John Smith" },
-      duration: "1h 20m",
-      location: "Floor 3",
-    },
-  ],
-  scrap: [
-    {
-      id: "REQ-090",
-      title: "Pump Failure",
-      equipment: "Water Pump #4",
-      priority: "high",
-      assignee: { name: "Mike Johnson" },
-      location: "Utility Room",
-    },
-  ],
-};
+  const fetchWorkOrders = useCallback(async () => {
+    try {
+      setIsLoading(true);
+      setError(null);
+      const response = await workorderService.list();
+      if (response.success && response.data) {
+        const items = Array.isArray(response.data)
+          ? response.data
+          : (response.data as unknown as { items: WorkOrder[] }).items || [];
+        setWorkOrders(items);
+      }
+    } catch (err) {
+      setError(
+        err instanceof Error ? err.message : "Failed to fetch work orders"
+      );
+    } finally {
+      setIsLoading(false);
+    }
+  }, []);
 
-const calendarEvents = [
-  { id: 1, title: "HVAC Inspection", time: "09:00", type: "preventive" },
-  { id: 2, title: "Generator Test", time: "11:00", type: "preventive" },
-  { id: 3, title: "Safety Audit", time: "14:00", type: "scheduled" },
-];
+  useEffect(() => {
+    fetchWorkOrders();
+  }, [fetchWorkOrders]);
 
-const upcomingPreventive = [
-  {
-    id: 1,
-    equipment: "HVAC Unit #12",
-    task: "Filter Replacement",
-    date: "Dec 28",
-    technician: "John Smith",
-  },
-  {
-    id: 2,
-    equipment: "Generator #1",
-    task: "Oil Change",
-    date: "Dec 29",
-    technician: "Mike Johnson",
-  },
-  {
-    id: 3,
-    equipment: "CNC Machine #5",
-    task: "Calibration",
-    date: "Dec 30",
-    technician: "Tom Wilson",
-  },
-  {
-    id: 4,
-    equipment: "Server Rack A",
-    task: "Dust Cleaning",
-    date: "Jan 2",
-    technician: "Sarah Davis",
-  },
-];
+  return { workOrders, isLoading, error, refetch: fetchWorkOrders };
+}
 
-// ============ KANBAN COMPONENTS ============
-function KanbanCard({
-  task,
-  showAssignee = true,
+function useTeams() {
+  const [teams, setTeams] = useState<Team[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+
+  const fetchTeams = useCallback(async () => {
+    try {
+      setIsLoading(true);
+      const response = await teamService.list();
+      if (response.success && response.data) {
+        const items = Array.isArray(response.data) ? response.data : [];
+        setTeams(items);
+      }
+    } catch (err) {
+      console.error("Failed to fetch teams:", err);
+    } finally {
+      setIsLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    fetchTeams();
+  }, [fetchTeams]);
+
+  return { teams, isLoading };
+}
+
+function useSchedules() {
+  const [schedules, setSchedules] = useState<MaintenanceSchedule[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+
+  const fetchSchedules = useCallback(async () => {
+    try {
+      setIsLoading(true);
+      const response = await scheduleService.getUpcoming(7);
+      if (response.success && response.data) {
+        const items = Array.isArray(response.data) ? response.data : [];
+        setSchedules(items);
+      }
+    } catch (err) {
+      console.error("Failed to fetch schedules:", err);
+    } finally {
+      setIsLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    fetchSchedules();
+  }, [fetchSchedules]);
+
+  return { schedules, isLoading };
+}
+
+function useTechnicians() {
+  const [technicians, setTechnicians] = useState<User[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+
+  const fetchTechnicians = useCallback(async () => {
+    try {
+      setIsLoading(true);
+      const response = await userService.list({ role: "technician" });
+      if (response.success && response.data) {
+        const items = Array.isArray(response.data) ? response.data : [];
+        setTechnicians(
+          items.filter((u) => u.role === "technician" || u.role === "manager")
+        );
+      }
+    } catch (err) {
+      console.error("Failed to fetch technicians:", err);
+    } finally {
+      setIsLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    fetchTechnicians();
+  }, [fetchTechnicians]);
+
+  return { technicians, isLoading };
+}
+
+// ============ COMPONENTS ============
+function KanbanBoard({
+  workOrders,
+  isLoading,
+  error,
+  onRefresh,
 }: {
-  task: KanbanTask;
-  showAssignee?: boolean;
+  workOrders: WorkOrder[];
+  isLoading: boolean;
+  error: string | null;
+  onRefresh: () => void;
 }) {
-  return (
-    <div
-      className={`kanban-card group animate-fade-in ${
-        task.isOverdue ? "overdue" : ""
-      }`}
-    >
-      <div className="flex items-start justify-between mb-2">
-        <span
-          className="text-xs font-medium"
-          style={{ color: "var(--foreground-muted)" }}
-        >
-          {task.id}
-        </span>
-        <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-          <GripVertical
-            className="w-4 h-4 cursor-grab"
-            style={{ color: "var(--foreground-subtle)" }}
-          />
-        </div>
-      </div>
-
-      <h4
-        className="font-medium text-sm mb-2"
-        style={{ color: "var(--foreground)" }}
-      >
-        {task.title}
-      </h4>
-
-      <div className="flex items-center gap-1.5 mb-3">
-        <Wrench
-          className="w-3.5 h-3.5"
-          style={{ color: "var(--foreground-muted)" }}
-        />
-        <span className="text-xs" style={{ color: "var(--foreground-muted)" }}>
-          {task.equipment}
-        </span>
-      </div>
-
-      {task.location && (
-        <div className="flex items-center gap-1.5 mb-3">
-          <MapPin
-            className="w-3.5 h-3.5"
-            style={{ color: "var(--foreground-subtle)" }}
-          />
-          <span
-            className="text-xs"
-            style={{ color: "var(--foreground-subtle)" }}
-          >
-            {task.location}
-          </span>
-        </div>
-      )}
-
-      <div className="flex items-center justify-between">
-        <PriorityBadge priority={task.priority} />
-        <div className="flex items-center gap-2">
-          {task.duration && (
-            <span
-              className="flex items-center gap-1 text-xs"
-              style={{ color: "var(--foreground-muted)" }}
-            >
-              <Timer className="w-3 h-3" />
-              {task.duration}
-            </span>
-          )}
-          {showAssignee && task.assignee && (
-            <Avatar name={task.assignee.name} size="sm" />
-          )}
-        </div>
-      </div>
-
-      {task.isOverdue && (
-        <div
-          className="flex items-center gap-1.5 mt-3 pt-3 border-t"
-          style={{ borderColor: "var(--border-light)" }}
-        >
-          <AlertTriangle
-            className="w-3.5 h-3.5"
-            style={{ color: "var(--danger)" }}
-          />
-          <span
-            className="text-xs font-medium"
-            style={{ color: "var(--danger)" }}
-          >
-            Overdue
-          </span>
-        </div>
-      )}
-    </div>
-  );
-}
-
-function KanbanColumn({
-  title,
-  status,
-  tasks,
-  color,
-}: {
-  title: string;
-  status: RequestStatus;
-  tasks: KanbanTask[];
-  color: string;
-}) {
-  return (
-    <div className="kanban-column flex-shrink-0">
-      <div
-        className="flex items-center justify-between p-3 border-b"
-        style={{ borderColor: "var(--border)" }}
-      >
-        <div className="flex items-center gap-2">
-          <div className="w-2 h-2 rounded-full" style={{ background: color }} />
-          <span
-            className="font-medium text-sm"
-            style={{ color: "var(--foreground)" }}
-          >
-            {title}
-          </span>
-          <span
-            className="px-2 py-0.5 text-xs font-medium rounded-full"
-            style={{
-              background: "var(--background-tertiary)",
-              color: "var(--foreground-muted)",
-            }}
-          >
-            {tasks.length}
-          </span>
-        </div>
-        <button className="btn btn-ghost p-1">
-          <MoreHorizontal className="w-4 h-4" />
-        </button>
-      </div>
-      <div className="p-3 space-y-0 max-h-[500px] overflow-y-auto">
-        {tasks.map((task, index) => (
-          <div key={task.id} style={{ animationDelay: `${index * 0.05}s` }}>
-            <KanbanCard task={task} showAssignee={status !== "new"} />
-          </div>
-        ))}
-        {status === "new" && (
-          <button
-            className="w-full p-3 rounded-lg border-2 border-dashed flex items-center justify-center gap-2 text-sm transition-all hover:bg-gray-50"
-            style={{
-              borderColor: "var(--border)",
-              color: "var(--foreground-muted)",
-            }}
-          >
-            <Plus className="w-4 h-4" />
-            Add Request
-          </button>
-        )}
-      </div>
-    </div>
-  );
-}
-
-function KanbanBoard() {
-  const columns: { title: string; status: RequestStatus; color: string }[] = [
-    { title: "New", status: "new", color: "var(--info)" },
-    { title: "In Progress", status: "in-progress", color: "var(--warning)" },
-    { title: "Repaired", status: "repaired", color: "var(--success)" },
-    { title: "Scrap", status: "scrap", color: "var(--foreground-subtle)" },
+  const columns: { id: KanbanColumn; label: string; color: string }[] = [
+    { id: "new", label: "New", color: "var(--primary)" },
+    { id: "in_progress", label: "In Progress", color: "var(--warning)" },
+    { id: "completed", label: "Completed", color: "var(--success)" },
+    { id: "cancelled", label: "Cancelled", color: "var(--foreground-muted)" },
   ];
 
-  return (
-    <div className="card overflow-hidden">
-      <div
-        className="flex items-center justify-between p-4 border-b"
-        style={{ borderColor: "var(--border)" }}
-      >
-        <h3 className="font-semibold" style={{ color: "var(--foreground)" }}>
-          Maintenance Requests
-        </h3>
-        <div className="flex items-center gap-2">
-          <button className="btn btn-secondary text-sm">
-            <Zap className="w-4 h-4" />
-            Auto-assign
-          </button>
-          <button className="btn btn-primary text-sm">
-            <Plus className="w-4 h-4" />
-            New Request
-          </button>
-        </div>
+  const getWorkOrdersByStatus = (status: KanbanColumn): KanbanCard[] => {
+    return workOrders
+      .filter((wo) => {
+        if (status === "new") return wo.status === "pending";
+        if (status === "in_progress") return wo.status === "in_progress";
+        if (status === "completed") return wo.status === "completed";
+        if (status === "cancelled")
+          return wo.status === "cancelled" || wo.status === "on_hold";
+        return false;
+      })
+      .map((wo) => ({
+        id: wo.id,
+        work_order_number: wo.work_order_number,
+        title: wo.title,
+        priority: wo.priority,
+        status: wo.status,
+        equipment: wo.equipment,
+        assigned_user: wo.assigned_user,
+        due_date: wo.due_date,
+      }));
+  };
+
+  const getPriorityFromString = (
+    priority: string
+  ): "low" | "medium" | "high" | "critical" => {
+    if (priority === "critical") return "critical";
+    if (priority === "high") return "high";
+    if (priority === "medium") return "medium";
+    return "low";
+  };
+
+  if (error) {
+    return (
+      <div className="card p-8">
+        <EmptyState
+          icon={
+            <AlertCircle
+              className="w-8 h-8"
+              style={{ color: "var(--danger)" }}
+            />
+          }
+          title="Failed to load work orders"
+          description={error}
+          action={
+            <button onClick={onRefresh} className="btn btn-primary text-sm">
+              <RefreshCw className="w-4 h-4" /> Retry
+            </button>
+          }
+        />
       </div>
-      <div className="flex gap-4 p-4 overflow-x-auto">
-        {columns.map((column) => (
-          <KanbanColumn
-            key={column.status}
-            title={column.title}
-            status={column.status}
-            tasks={kanbanData[column.status]}
-            color={column.color}
-          />
-        ))}
-      </div>
-    </div>
-  );
-}
-
-// ============ CALENDAR COMPONENTS ============
-function MiniCalendar() {
-  const [currentMonth] = useState(new Date());
-  const days = ["S", "M", "T", "W", "T", "F", "S"];
-  const today = new Date().getDate();
-
-  // Generate calendar days
-  const firstDay = new Date(
-    currentMonth.getFullYear(),
-    currentMonth.getMonth(),
-    1
-  ).getDay();
-  const daysInMonth = new Date(
-    currentMonth.getFullYear(),
-    currentMonth.getMonth() + 1,
-    0
-  ).getDate();
-  const calendarDays = [];
-
-  for (let i = 0; i < firstDay; i++) {
-    calendarDays.push(null);
-  }
-  for (let i = 1; i <= daysInMonth; i++) {
-    calendarDays.push(i);
+    );
   }
 
-  const eventDays = [5, 12, 15, 22, 28, 29, 30];
-
-  return (
-    <div className="card p-4">
-      <div className="flex items-center justify-between mb-4">
-        <h3 className="font-semibold" style={{ color: "var(--foreground)" }}>
-          {currentMonth.toLocaleDateString("en-US", {
-            month: "long",
-            year: "numeric",
-          })}
-        </h3>
-        <div className="flex items-center gap-1">
-          <button className="btn btn-ghost p-1.5">
-            <ChevronLeft className="w-4 h-4" />
-          </button>
-          <button className="btn btn-ghost p-1.5">
-            <ChevronRight className="w-4 h-4" />
-          </button>
+  if (isLoading) {
+    return (
+      <div className="card p-4">
+        <div className="flex items-center justify-between mb-4">
+          <SectionHeader title="Work Orders Kanban" />
         </div>
-      </div>
-
-      <div className="grid grid-cols-7 gap-1 mb-2">
-        {days.map((day, i) => (
-          <div
-            key={i}
-            className="text-center text-xs font-medium py-1"
-            style={{ color: "var(--foreground-subtle)" }}
-          >
-            {day}
-          </div>
-        ))}
-      </div>
-
-      <div className="grid grid-cols-7 gap-1">
-        {calendarDays.map((day, i) => (
-          <div
-            key={i}
-            className={`calendar-day aspect-square text-sm ${
-              day === today ? "today" : ""
-            } ${day && eventDays.includes(day) ? "has-event" : ""}`}
-            style={{ color: day ? "var(--foreground)" : "transparent" }}
-          >
-            {day || ""}
-          </div>
-        ))}
-      </div>
-
-      {/* Today's Events */}
-      <div
-        className="mt-4 pt-4 border-t"
-        style={{ borderColor: "var(--border)" }}
-      >
-        <h4
-          className="text-sm font-medium mb-3"
-          style={{ color: "var(--foreground)" }}
-        >
-          Today&apos;s Schedule
-        </h4>
-        <div className="space-y-2">
-          {calendarEvents.map((event) => (
-            <div
-              key={event.id}
-              className="flex items-center gap-3 p-2 rounded-lg"
-              style={{ background: "var(--background-secondary)" }}
-            >
-              <div
-                className="w-1 h-8 rounded-full"
-                style={{
-                  background:
-                    event.type === "preventive"
-                      ? "var(--success)"
-                      : "var(--primary)",
-                }}
-              />
-              <div className="flex-1 min-w-0">
-                <p
-                  className="text-sm font-medium truncate"
-                  style={{ color: "var(--foreground)" }}
-                >
-                  {event.title}
-                </p>
-                <p
-                  className="text-xs"
-                  style={{ color: "var(--foreground-muted)" }}
-                >
-                  {event.time}
-                </p>
-              </div>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+          {columns.map((col) => (
+            <div key={col.id} className="space-y-3">
+              <div className="skeleton-card h-10 rounded-lg" />
+              <div className="skeleton-card h-32 rounded-xl" />
+              <div className="skeleton-card h-32 rounded-xl" />
             </div>
           ))}
         </div>
       </div>
-    </div>
-  );
-}
+    );
+  }
 
-function UpcomingPreventive() {
   return (
     <div className="card p-4">
-      <SectionHeader
-        title="Upcoming Preventive"
-        action={
-          <button className="btn btn-ghost text-sm">
-            View All
-            <ArrowRight className="w-4 h-4" />
+      <div className="flex items-center justify-between mb-4">
+        <SectionHeader title="Work Orders Kanban" />
+        <div className="flex items-center gap-2">
+          <button onClick={onRefresh} className="btn btn-secondary text-sm">
+            <RefreshCw className="w-4 h-4" />
           </button>
-        }
-      />
-      <div className="space-y-3 mt-4">
-        {upcomingPreventive.map((item, index) => (
-          <div
-            key={item.id}
-            className="flex items-center gap-3 p-3 rounded-xl transition-all hover:bg-gray-50 cursor-pointer animate-fade-in-left"
-            style={{ animationDelay: `${index * 0.1}s` }}
-          >
-            <div
-              className="w-10 h-10 rounded-lg flex items-center justify-center flex-shrink-0"
-              style={{ background: "var(--success-light)" }}
-            >
-              <CalendarIcon
-                className="w-5 h-5"
-                style={{ color: "var(--success)" }}
-              />
-            </div>
-            <div className="flex-1 min-w-0">
-              <p
-                className="text-sm font-medium truncate"
-                style={{ color: "var(--foreground)" }}
-              >
-                {item.task}
-              </p>
-              <p
-                className="text-xs truncate"
-                style={{ color: "var(--foreground-muted)" }}
-              >
-                {item.equipment}
-              </p>
-            </div>
-            <div className="text-right flex-shrink-0">
-              <p
-                className="text-sm font-medium"
-                style={{ color: "var(--foreground)" }}
-              >
-                {item.date}
-              </p>
-              <p
-                className="text-xs"
-                style={{ color: "var(--foreground-muted)" }}
-              >
-                {item.technician}
-              </p>
-            </div>
-          </div>
-        ))}
+          <button className="btn btn-primary text-sm">
+            <Plus className="w-4 h-4" />
+            New Work Order
+          </button>
+        </div>
       </div>
-    </div>
-  );
-}
 
-function TeamWorkload() {
-  const workload = [
-    { name: "John Smith", tasks: 4, maxTasks: 6 },
-    { name: "Mike Johnson", tasks: 5, maxTasks: 6 },
-    { name: "Tom Wilson", tasks: 2, maxTasks: 6 },
-    { name: "Sarah Davis", tasks: 6, maxTasks: 6 },
-  ];
-
-  return (
-    <div className="card p-4">
-      <SectionHeader title="Team Workload" subtitle="Current assignments" />
-      <div className="space-y-4 mt-4">
-        {workload.map((member, index) => {
-          const percentage = (member.tasks / member.maxTasks) * 100;
-          const isOverloaded = percentage >= 90;
-
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+        {columns.map((column) => {
+          const cards = getWorkOrdersByStatus(column.id);
           return (
-            <div
-              key={member.name}
-              className="animate-fade-in"
-              style={{ animationDelay: `${index * 0.1}s` }}
-            >
-              <div className="flex items-center justify-between mb-2">
+            <div key={column.id} className="space-y-3">
+              {/* Column Header */}
+              <div
+                className="flex items-center justify-between p-3 rounded-lg"
+                style={{ background: "var(--background-secondary)" }}
+              >
                 <div className="flex items-center gap-2">
-                  <Avatar name={member.name} size="sm" />
+                  <div
+                    className="w-3 h-3 rounded-full"
+                    style={{ background: column.color }}
+                  />
                   <span
-                    className="text-sm font-medium"
+                    className="font-medium text-sm"
                     style={{ color: "var(--foreground)" }}
                   >
-                    {member.name}
+                    {column.label}
                   </span>
                 </div>
                 <span
-                  className="text-sm font-medium"
+                  className="px-2 py-0.5 rounded-full text-xs font-medium"
                   style={{
-                    color: isOverloaded
-                      ? "var(--danger)"
-                      : "var(--foreground-muted)",
+                    background: "var(--background)",
+                    color: "var(--foreground-muted)",
                   }}
                 >
-                  {member.tasks}/{member.maxTasks} tasks
+                  {cards.length}
                 </span>
               </div>
-              <div
-                className="h-2 rounded-full overflow-hidden"
-                style={{ background: "var(--background-tertiary)" }}
-              >
-                <div
-                  className="h-full rounded-full transition-all duration-500"
-                  style={{
-                    width: `${percentage}%`,
-                    background: isOverloaded
-                      ? "var(--danger)"
-                      : percentage > 60
-                      ? "var(--warning)"
-                      : "var(--success)",
-                  }}
-                />
+
+              {/* Cards */}
+              <div className="space-y-3 min-h-[200px]">
+                {cards.length === 0 ? (
+                  <div
+                    className="p-4 rounded-xl text-center"
+                    style={{
+                      border: "2px dashed var(--border)",
+                      background: "var(--background-secondary)",
+                    }}
+                  >
+                    <p
+                      className="text-sm"
+                      style={{ color: "var(--foreground-muted)" }}
+                    >
+                      No work orders
+                    </p>
+                  </div>
+                ) : (
+                  cards.map((card, index) => (
+                    <div
+                      key={card.id}
+                      className="p-4 rounded-xl cursor-pointer transition-all hover:shadow-md animate-fade-in"
+                      style={{
+                        background: "var(--background)",
+                        border: "1px solid var(--border)",
+                        animationDelay: `${index * 0.05}s`,
+                      }}
+                    >
+                      {/* Card Header */}
+                      <div className="flex items-start justify-between mb-2">
+                        <span
+                          className="text-xs font-mono"
+                          style={{ color: "var(--foreground-muted)" }}
+                        >
+                          {card.work_order_number}
+                        </span>
+                        <PriorityBadge
+                          priority={getPriorityFromString(card.priority)}
+                        />
+                      </div>
+
+                      {/* Title */}
+                      <h4
+                        className="font-medium text-sm mb-2 line-clamp-2"
+                        style={{ color: "var(--foreground)" }}
+                      >
+                        {card.title}
+                      </h4>
+
+                      {/* Equipment */}
+                      {card.equipment && (
+                        <div className="flex items-center gap-1.5 mb-3">
+                          <Wrench
+                            className="w-3.5 h-3.5"
+                            style={{ color: "var(--foreground-muted)" }}
+                          />
+                          <span
+                            className="text-xs"
+                            style={{ color: "var(--foreground-muted)" }}
+                          >
+                            {card.equipment.name}
+                          </span>
+                        </div>
+                      )}
+
+                      {/* Footer */}
+                      <div
+                        className="flex items-center justify-between pt-2 border-t"
+                        style={{ borderColor: "var(--border)" }}
+                      >
+                        {card.assigned_user ? (
+                          <Avatar
+                            name={`${card.assigned_user.first_name} ${card.assigned_user.last_name}`}
+                            size="sm"
+                          />
+                        ) : (
+                          <div
+                            className="w-6 h-6 rounded-full flex items-center justify-center"
+                            style={{
+                              background: "var(--background-secondary)",
+                            }}
+                          >
+                            <UserIcon
+                              className="w-3 h-3"
+                              style={{ color: "var(--foreground-muted)" }}
+                            />
+                          </div>
+                        )}
+                        {card.due_date && (
+                          <div className="flex items-center gap-1">
+                            <Clock
+                              className="w-3 h-3"
+                              style={{ color: "var(--foreground-muted)" }}
+                            />
+                            <span
+                              className="text-xs"
+                              style={{ color: "var(--foreground-muted)" }}
+                            >
+                              {new Date(card.due_date).toLocaleDateString()}
+                            </span>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  ))
+                )}
               </div>
             </div>
           );
@@ -655,41 +420,433 @@ function TeamWorkload() {
   );
 }
 
-// ============ MAIN PAGE ============
-export default function ManagerDashboard() {
+function MiniCalendar() {
+  const [currentDate, setCurrentDate] = useState(new Date());
+
+  const daysInMonth = new Date(
+    currentDate.getFullYear(),
+    currentDate.getMonth() + 1,
+    0
+  ).getDate();
+
+  const firstDayOfMonth = new Date(
+    currentDate.getFullYear(),
+    currentDate.getMonth(),
+    1
+  ).getDay();
+
+  const monthNames = [
+    "January",
+    "February",
+    "March",
+    "April",
+    "May",
+    "June",
+    "July",
+    "August",
+    "September",
+    "October",
+    "November",
+    "December",
+  ];
+
+  const prevMonth = () => {
+    setCurrentDate(
+      new Date(currentDate.getFullYear(), currentDate.getMonth() - 1, 1)
+    );
+  };
+
+  const nextMonth = () => {
+    setCurrentDate(
+      new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, 1)
+    );
+  };
+
+  const today = new Date();
+  const isToday = (day: number) =>
+    day === today.getDate() &&
+    currentDate.getMonth() === today.getMonth() &&
+    currentDate.getFullYear() === today.getFullYear();
+
   return (
-    <DashboardLayout title="Maintenance Control Center" notificationCount={8}>
-      {/* Alert for Overdue */}
-      <div className="mb-6">
-        <OverdueIndicator count={3} />
+    <div className="card p-4">
+      <div className="flex items-center justify-between mb-4">
+        <h3 className="font-semibold" style={{ color: "var(--foreground)" }}>
+          {monthNames[currentDate.getMonth()]} {currentDate.getFullYear()}
+        </h3>
+        <div className="flex items-center gap-1">
+          <button
+            onClick={prevMonth}
+            className="p-1.5 rounded-lg hover:bg-gray-100 transition-colors"
+          >
+            <ChevronLeft
+              className="w-4 h-4"
+              style={{ color: "var(--foreground-muted)" }}
+            />
+          </button>
+          <button
+            onClick={nextMonth}
+            className="p-1.5 rounded-lg hover:bg-gray-100 transition-colors"
+          >
+            <ChevronRight
+              className="w-4 h-4"
+              style={{ color: "var(--foreground-muted)" }}
+            />
+          </button>
+        </div>
       </div>
 
-      {/* KPI Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
-        {kpiData.map((kpi, index) => (
+      {/* Day headers */}
+      <div className="grid grid-cols-7 gap-1 mb-2">
+        {["S", "M", "T", "W", "T", "F", "S"].map((day, i) => (
           <div
-            key={kpi.label}
-            className="animate-fade-in-up"
-            style={{ animationDelay: `${index * 0.1}s` }}
+            key={i}
+            className="text-center text-xs font-medium py-1"
+            style={{ color: "var(--foreground-muted)" }}
           >
-            <KPICard {...kpi} />
+            {day}
           </div>
         ))}
       </div>
 
-      {/* Main Content Grid */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Kanban Board - Wide */}
-        <div className="lg:col-span-2">
-          <KanbanBoard />
-        </div>
+      {/* Calendar grid */}
+      <div className="grid grid-cols-7 gap-1">
+        {Array.from({ length: firstDayOfMonth }).map((_, i) => (
+          <div key={`empty-${i}`} className="aspect-square" />
+        ))}
+        {Array.from({ length: daysInMonth }).map((_, i) => {
+          const day = i + 1;
+          return (
+            <button
+              key={day}
+              className={`aspect-square flex items-center justify-center text-sm rounded-lg transition-colors ${
+                isToday(day) ? "font-bold" : ""
+              }`}
+              style={{
+                background: isToday(day) ? "var(--primary)" : "transparent",
+                color: isToday(day) ? "white" : "var(--foreground)",
+              }}
+            >
+              {day}
+            </button>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
 
-        {/* Right Sidebar */}
-        <div className="space-y-6">
-          <MiniCalendar />
-          <TeamWorkload />
-          <UpcomingPreventive />
+function TeamWorkload({
+  teams,
+  isLoading,
+}: {
+  teams: Team[];
+  isLoading: boolean;
+}) {
+  if (isLoading) {
+    return (
+      <div className="card p-4">
+        <SectionHeader title="Team Workload" />
+        <div className="space-y-3 mt-4">
+          {[1, 2, 3].map((i) => (
+            <div key={i} className="skeleton-card h-16 rounded-xl" />
+          ))}
         </div>
+      </div>
+    );
+  }
+
+  if (teams.length === 0) {
+    return (
+      <div className="card p-4">
+        <SectionHeader title="Team Workload" />
+        <div className="mt-4">
+          <EmptyState
+            icon={<Users className="w-8 h-8" />}
+            title="No teams"
+            description="Create teams to track workload"
+          />
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="card p-4">
+      <SectionHeader title="Team Workload" />
+      <div className="space-y-4 mt-4">
+        {teams.slice(0, 4).map((team, index) => (
+          <div
+            key={team.id}
+            className="animate-fade-in"
+            style={{ animationDelay: `${index * 0.1}s` }}
+          >
+            <div className="flex items-center justify-between mb-2">
+              <div className="flex items-center gap-3">
+                <div
+                  className="w-8 h-8 rounded-lg flex items-center justify-center"
+                  style={{ background: "var(--primary-100)" }}
+                >
+                  <Users
+                    className="w-4 h-4"
+                    style={{ color: "var(--primary)" }}
+                  />
+                </div>
+                <div>
+                  <span
+                    className="font-medium text-sm"
+                    style={{ color: "var(--foreground)" }}
+                  >
+                    {team.name}
+                  </span>
+                  <p
+                    className="text-xs"
+                    style={{ color: "var(--foreground-muted)" }}
+                  >
+                    {team.members_count || 0} members
+                  </p>
+                </div>
+              </div>
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function UpcomingSchedules({
+  schedules,
+  isLoading,
+}: {
+  schedules: MaintenanceSchedule[];
+  isLoading: boolean;
+}) {
+  if (isLoading) {
+    return (
+      <div className="card p-4">
+        <SectionHeader title="Upcoming Preventive Maintenance" />
+        <div className="space-y-3 mt-4">
+          {[1, 2, 3].map((i) => (
+            <div key={i} className="skeleton-card h-16 rounded-xl" />
+          ))}
+        </div>
+      </div>
+    );
+  }
+
+  if (schedules.length === 0) {
+    return (
+      <div className="card p-4">
+        <SectionHeader title="Upcoming Preventive Maintenance" />
+        <div className="mt-4">
+          <EmptyState
+            icon={<Calendar className="w-8 h-8" />}
+            title="No upcoming maintenance"
+            description="Schedule preventive maintenance tasks"
+          />
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="card p-4">
+      <SectionHeader title="Upcoming Preventive Maintenance" />
+      <div className="space-y-3 mt-4">
+        {schedules.slice(0, 5).map((schedule, index) => (
+          <div
+            key={schedule.id}
+            className="flex items-center gap-4 p-3 rounded-xl hover:bg-gray-50 transition-colors animate-fade-in"
+            style={{ animationDelay: `${index * 0.1}s` }}
+          >
+            <div
+              className="w-10 h-10 rounded-lg flex items-center justify-center"
+              style={{ background: "var(--primary-100)" }}
+            >
+              <Wrench className="w-5 h-5" style={{ color: "var(--primary)" }} />
+            </div>
+            <div className="flex-1 min-w-0">
+              <span
+                className="font-medium text-sm block"
+                style={{ color: "var(--foreground)" }}
+              >
+                {schedule.name}
+              </span>
+              <span
+                className="text-xs"
+                style={{ color: "var(--foreground-muted)" }}
+              >
+                {schedule.equipment?.name || "Unknown equipment"}
+              </span>
+            </div>
+            <div className="text-right">
+              <span
+                className="text-xs font-medium block"
+                style={{ color: "var(--primary)" }}
+              >
+                {schedule.next_due
+                  ? new Date(schedule.next_due).toLocaleDateString()
+                  : "Not scheduled"}
+              </span>
+              <span
+                className="text-xs"
+                style={{ color: "var(--foreground-muted)" }}
+              >
+                {schedule.frequency_type}
+              </span>
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+// ============ MAIN PAGE ============
+export default function ManagerDashboard() {
+  const {
+    workOrders,
+    isLoading: woLoading,
+    error: woError,
+    refetch: refetchWO,
+  } = useWorkOrders();
+  const { teams, isLoading: teamsLoading } = useTeams();
+  const { schedules, isLoading: schedulesLoading } = useSchedules();
+
+  const stats = {
+    total: workOrders.length,
+    pending: workOrders.filter((wo) => wo.status === "pending").length,
+    inProgress: workOrders.filter((wo) => wo.status === "in_progress").length,
+    completed: workOrders.filter((wo) => wo.status === "completed").length,
+  };
+
+  return (
+    <DashboardLayout
+      title="Manager Dashboard"
+      notificationCount={stats.pending}
+    >
+      {/* Stats Row */}
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+        <div className="card p-4">
+          <div className="flex items-center gap-3">
+            <div
+              className="w-10 h-10 rounded-lg flex items-center justify-center"
+              style={{ background: "var(--primary-100)" }}
+            >
+              <ClipboardList
+                className="w-5 h-5"
+                style={{ color: "var(--primary)" }}
+              />
+            </div>
+            <div>
+              <p
+                className="text-2xl font-bold"
+                style={{ color: "var(--foreground)" }}
+              >
+                {stats.total}
+              </p>
+              <p
+                className="text-xs"
+                style={{ color: "var(--foreground-muted)" }}
+              >
+                Total Work Orders
+              </p>
+            </div>
+          </div>
+        </div>
+        <div className="card p-4">
+          <div className="flex items-center gap-3">
+            <div
+              className="w-10 h-10 rounded-lg flex items-center justify-center"
+              style={{ background: "var(--info-light)" }}
+            >
+              <Clock className="w-5 h-5" style={{ color: "var(--info)" }} />
+            </div>
+            <div>
+              <p
+                className="text-2xl font-bold"
+                style={{ color: "var(--foreground)" }}
+              >
+                {stats.pending}
+              </p>
+              <p
+                className="text-xs"
+                style={{ color: "var(--foreground-muted)" }}
+              >
+                Pending
+              </p>
+            </div>
+          </div>
+        </div>
+        <div className="card p-4">
+          <div className="flex items-center gap-3">
+            <div
+              className="w-10 h-10 rounded-lg flex items-center justify-center"
+              style={{ background: "var(--warning-light)" }}
+            >
+              <Wrench className="w-5 h-5" style={{ color: "var(--warning)" }} />
+            </div>
+            <div>
+              <p
+                className="text-2xl font-bold"
+                style={{ color: "var(--foreground)" }}
+              >
+                {stats.inProgress}
+              </p>
+              <p
+                className="text-xs"
+                style={{ color: "var(--foreground-muted)" }}
+              >
+                In Progress
+              </p>
+            </div>
+          </div>
+        </div>
+        <div className="card p-4">
+          <div className="flex items-center gap-3">
+            <div
+              className="w-10 h-10 rounded-lg flex items-center justify-center"
+              style={{ background: "var(--success-light)" }}
+            >
+              <ClipboardList
+                className="w-5 h-5"
+                style={{ color: "var(--success)" }}
+              />
+            </div>
+            <div>
+              <p
+                className="text-2xl font-bold"
+                style={{ color: "var(--foreground)" }}
+              >
+                {stats.completed}
+              </p>
+              <p
+                className="text-xs"
+                style={{ color: "var(--foreground-muted)" }}
+              >
+                Completed
+              </p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Kanban Board */}
+      <div className="mb-6">
+        <KanbanBoard
+          workOrders={workOrders}
+          isLoading={woLoading}
+          error={woError}
+          onRefresh={refetchWO}
+        />
+      </div>
+
+      {/* Bottom Row */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <MiniCalendar />
+        <TeamWorkload teams={teams} isLoading={teamsLoading} />
+        <UpcomingSchedules schedules={schedules} isLoading={schedulesLoading} />
       </div>
     </DashboardLayout>
   );

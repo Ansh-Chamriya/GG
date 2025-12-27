@@ -1,154 +1,168 @@
 "use client";
 
-import React from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import {
   DashboardLayout,
   KPICard,
   SectionHeader,
-  StatusBadge,
   Avatar,
-  ProgressBar,
   EmptyState,
+  SkeletonTable,
 } from "@/app/components/dashboard/shared";
+import {
+  organizationService,
+  userService,
+  auditService,
+  reportService,
+} from "@/app/lib/api/services";
+import { Organization, User, AuditLog } from "@/app/lib/api/config";
 import {
   Building2,
   Settings,
   ClipboardList,
   Activity,
   Users,
-  TrendingUp,
   AlertTriangle,
   CheckCircle2,
-  Clock,
-  Shield,
   Plus,
   MoreHorizontal,
   ArrowUpRight,
-  Zap,
   Server,
+  RefreshCw,
+  AlertCircle,
+  Shield,
+  Search,
 } from "lucide-react";
 
-// ============ MOCK DATA ============
-const kpiData = [
-  {
-    label: "Total Organizations",
-    value: 24,
-    icon: <Building2 className="w-6 h-6" />,
-    trend: { value: 12, isPositive: true },
-    color: "var(--primary)",
-  },
-  {
-    label: "Total Equipment",
-    value: "2,847",
-    icon: <Settings className="w-6 h-6" />,
-    trend: { value: 8, isPositive: true },
-    color: "var(--info)",
-  },
-  {
-    label: "Active Requests",
-    value: 156,
-    icon: <ClipboardList className="w-6 h-6" />,
-    trend: { value: 5, isPositive: false },
-    color: "var(--warning)",
-  },
-  {
-    label: "System Uptime",
-    value: "99.9%",
-    icon: <Activity className="w-6 h-6" />,
-    color: "var(--success)",
-  },
-];
+// ============ HOOKS ============
+function useOrganizationList() {
+  const [organizations, setOrganizations] = useState<Organization[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
-const organizationData = [
-  {
-    id: 1,
-    name: "Acme Manufacturing",
-    equipment: 450,
-    requests: 23,
-    teams: 5,
-    status: "active",
-  },
-  {
-    id: 2,
-    name: "TechCorp Industries",
-    equipment: 320,
-    requests: 18,
-    teams: 4,
-    status: "active",
-  },
-  {
-    id: 3,
-    name: "BuildRight Construction",
-    equipment: 280,
-    requests: 31,
-    teams: 6,
-    status: "active",
-  },
-  {
-    id: 4,
-    name: "FastTrack Logistics",
-    equipment: 195,
-    requests: 12,
-    teams: 3,
-    status: "active",
-  },
-  {
-    id: 5,
-    name: "GreenEnergy Solutions",
-    equipment: 167,
-    requests: 8,
-    teams: 2,
-    status: "pending",
-  },
-];
+  const fetchOrganizations = useCallback(async () => {
+    try {
+      setIsLoading(true);
+      setError(null);
+      const response = await organizationService.list();
+      if (response.success && response.data) {
+        const items = Array.isArray(response.data) ? response.data : [];
+        setOrganizations(items);
+      }
+    } catch (err) {
+      setError(
+        err instanceof Error ? err.message : "Failed to fetch organizations"
+      );
+    } finally {
+      setIsLoading(false);
+    }
+  }, []);
 
-const recentActivity = [
-  {
-    id: 1,
-    type: "org",
-    action: "New organization registered",
-    name: "GreenEnergy Solutions",
-    time: "2 mins ago",
-  },
-  {
-    id: 2,
-    type: "user",
-    action: "Admin role assigned",
-    name: "Sarah Johnson",
-    time: "15 mins ago",
-  },
-  {
-    id: 3,
-    type: "request",
-    action: "Critical request created",
-    name: "HVAC System #45",
-    time: "32 mins ago",
-  },
-  {
-    id: 4,
-    type: "equipment",
-    action: "Equipment marked as scrap",
-    name: "Generator Unit #12",
-    time: "1 hour ago",
-  },
-  {
-    id: 5,
-    type: "system",
-    action: "Automation rule triggered",
-    name: "Auto-assignment",
-    time: "2 hours ago",
-  },
-];
+  useEffect(() => {
+    fetchOrganizations();
+  }, [fetchOrganizations]);
 
-const teamTypeData = [
-  { type: "Mechanics", requests: 45, completion: 92 },
-  { type: "Electricians", requests: 38, completion: 88 },
-  { type: "IT Support", requests: 52, completion: 95 },
-  { type: "HVAC", requests: 21, completion: 85 },
-];
+  return { organizations, isLoading, error, refetch: fetchOrganizations };
+}
+
+function useUserList() {
+  const [users, setUsers] = useState<User[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  const fetchUsers = useCallback(async () => {
+    try {
+      setIsLoading(true);
+      setError(null);
+      const response = await userService.list();
+      if (response.success && response.data) {
+        const items = Array.isArray(response.data) ? response.data : [];
+        setUsers(items);
+      }
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Failed to fetch users");
+    } finally {
+      setIsLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    fetchUsers();
+  }, [fetchUsers]);
+
+  return { users, isLoading, error, refetch: fetchUsers };
+}
+
+function useAuditLog() {
+  const [logs, setLogs] = useState<AuditLog[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  const fetchLogs = useCallback(async () => {
+    try {
+      setIsLoading(true);
+      setError(null);
+      const response = await auditService.list();
+      if (response.success && response.data) {
+        const items = Array.isArray(response.data) ? response.data : [];
+        setLogs(items);
+      }
+    } catch (err) {
+      setError(
+        err instanceof Error ? err.message : "Failed to fetch audit logs"
+      );
+    } finally {
+      setIsLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    fetchLogs();
+  }, [fetchLogs]);
+
+  return { logs, isLoading, error, refetch: fetchLogs };
+}
 
 // ============ COMPONENTS ============
-function OrganizationTable() {
+function OrganizationsTable({
+  organizations,
+  isLoading,
+  error,
+  onRefresh,
+}: {
+  organizations: Organization[];
+  isLoading: boolean;
+  error: string | null;
+  onRefresh: () => void;
+}) {
+  const [searchQuery, setSearchQuery] = useState("");
+
+  const filteredOrgs = organizations.filter((org) =>
+    org.name.toLowerCase().includes(searchQuery.toLowerCase())
+  );
+
+  if (error) {
+    return (
+      <div className="card p-8">
+        <EmptyState
+          icon={
+            <AlertCircle
+              className="w-8 h-8"
+              style={{ color: "var(--danger)" }}
+            />
+          }
+          title="Failed to load organizations"
+          description={error}
+          action={
+            <button onClick={onRefresh} className="btn btn-primary text-sm">
+              <RefreshCw className="w-4 h-4" /> Retry
+            </button>
+          }
+        />
+      </div>
+    );
+  }
+
   return (
     <div className="card overflow-hidden">
       <div
@@ -156,159 +170,249 @@ function OrganizationTable() {
         style={{ borderColor: "var(--border)" }}
       >
         <h3 className="font-semibold" style={{ color: "var(--foreground)" }}>
-          Organizations Overview
+          Organizations
         </h3>
-        <button className="btn btn-ghost text-sm">
-          View All
-          <ArrowUpRight className="w-4 h-4" />
-        </button>
+        <div className="flex items-center gap-2">
+          <div
+            className="flex items-center gap-2 px-3 py-1.5 rounded-lg"
+            style={{ background: "var(--background-secondary)" }}
+          >
+            <Search
+              className="w-4 h-4"
+              style={{ color: "var(--foreground-muted)" }}
+            />
+            <input
+              type="text"
+              placeholder="Search..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="bg-transparent border-none outline-none text-sm w-32"
+            />
+          </div>
+          <button
+            onClick={onRefresh}
+            className="btn btn-secondary text-sm"
+            disabled={isLoading}
+          >
+            <RefreshCw
+              className={`w-4 h-4 ${isLoading ? "animate-spin" : ""}`}
+            />
+          </button>
+          <button className="btn btn-primary text-sm">
+            <Plus className="w-4 h-4" />
+            Add Org
+          </button>
+        </div>
       </div>
-      <div className="overflow-x-auto">
-        <table className="table">
-          <thead>
-            <tr>
-              <th>Organization</th>
-              <th>Equipment</th>
-              <th>Active Requests</th>
-              <th>Teams</th>
-              <th>Status</th>
-              <th></th>
-            </tr>
-          </thead>
-          <tbody>
-            {organizationData.map((org, index) => (
-              <tr
-                key={org.id}
-                className="animate-fade-in"
-                style={{ animationDelay: `${index * 0.05}s` }}
-              >
-                <td>
-                  <div className="flex items-center gap-3">
-                    <div
-                      className="w-10 h-10 rounded-lg flex items-center justify-center"
-                      style={{ background: "var(--primary-100)" }}
-                    >
-                      <Building2
-                        className="w-5 h-5"
-                        style={{ color: "var(--primary)" }}
-                      />
-                    </div>
-                    <span className="font-medium">{org.name}</span>
-                  </div>
-                </td>
-                <td>
-                  <span className="font-medium">{org.equipment}</span>
-                </td>
-                <td>
-                  <span
-                    className="inline-flex items-center gap-1.5 font-medium"
-                    style={{
-                      color:
-                        org.requests > 20
-                          ? "var(--warning)"
-                          : "var(--foreground)",
-                    }}
-                  >
-                    {org.requests > 20 && <AlertTriangle className="w-4 h-4" />}
-                    {org.requests}
-                  </span>
-                </td>
-                <td>{org.teams}</td>
-                <td>
-                  <span
-                    className={`badge ${
-                      org.status === "active"
-                        ? "badge-success"
-                        : "badge-warning"
-                    }`}
-                  >
-                    {org.status === "active" ? "Active" : "Pending"}
-                  </span>
-                </td>
-                <td>
-                  <button className="btn btn-ghost p-2">
-                    <MoreHorizontal className="w-4 h-4" />
-                  </button>
-                </td>
+
+      {isLoading ? (
+        <SkeletonTable rows={5} />
+      ) : filteredOrgs.length === 0 ? (
+        <div className="p-8">
+          <EmptyState
+            icon={<Building2 className="w-8 h-8" />}
+            title="No organizations found"
+            description={
+              searchQuery
+                ? "Try adjusting your search"
+                : "Create your first organization"
+            }
+          />
+        </div>
+      ) : (
+        <div className="overflow-x-auto">
+          <table className="table">
+            <thead>
+              <tr>
+                <th>Organization</th>
+                <th>Subscription</th>
+                <th>Status</th>
+                <th>Created</th>
+                <th></th>
               </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
+            </thead>
+            <tbody>
+              {filteredOrgs.map((org, index) => (
+                <tr
+                  key={org.id}
+                  className="animate-fade-in hover:bg-gray-50 transition-colors"
+                  style={{ animationDelay: `${index * 0.05}s` }}
+                >
+                  <td>
+                    <div className="flex items-center gap-3">
+                      <div
+                        className="w-10 h-10 rounded-lg flex items-center justify-center"
+                        style={{ background: "var(--primary-100)" }}
+                      >
+                        {org.logo_url ? (
+                          <img
+                            src={org.logo_url}
+                            alt={org.name}
+                            className="w-8 h-8 rounded"
+                          />
+                        ) : (
+                          <Building2
+                            className="w-5 h-5"
+                            style={{ color: "var(--primary)" }}
+                          />
+                        )}
+                      </div>
+                      <div>
+                        <span className="font-medium">{org.name}</span>
+                        <p
+                          className="text-xs"
+                          style={{ color: "var(--foreground-muted)" }}
+                        >
+                          {org.slug}
+                        </p>
+                      </div>
+                    </div>
+                  </td>
+                  <td>
+                    <span
+                      className="px-2.5 py-1 rounded-full text-xs font-medium"
+                      style={{
+                        background:
+                          org.subscription_tier === "enterprise"
+                            ? "var(--primary-100)"
+                            : org.subscription_tier === "pro"
+                            ? "var(--info-light)"
+                            : "var(--background-secondary)",
+                        color:
+                          org.subscription_tier === "enterprise"
+                            ? "var(--primary)"
+                            : org.subscription_tier === "pro"
+                            ? "var(--info)"
+                            : "var(--foreground-muted)",
+                      }}
+                    >
+                      {org.subscription_tier || "Free"}
+                    </span>
+                  </td>
+                  <td>
+                    <span
+                      className={`badge ${
+                        org.is_active ? "badge-success" : "badge-neutral"
+                      }`}
+                    >
+                      {org.is_active ? "Active" : "Inactive"}
+                    </span>
+                  </td>
+                  <td
+                    className="text-sm"
+                    style={{ color: "var(--foreground-muted)" }}
+                  >
+                    {new Date(org.created_at).toLocaleDateString()}
+                  </td>
+                  <td>
+                    <button className="btn btn-ghost p-2">
+                      <MoreHorizontal className="w-4 h-4" />
+                    </button>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
     </div>
   );
 }
 
-function ActivityFeed() {
-  const getActivityIcon = (type: string) => {
-    switch (type) {
-      case "org":
-        return <Building2 className="w-4 h-4" />;
-      case "user":
-        return <Users className="w-4 h-4" />;
-      case "request":
-        return <ClipboardList className="w-4 h-4" />;
-      case "equipment":
-        return <Settings className="w-4 h-4" />;
-      case "system":
-        return <Zap className="w-4 h-4" />;
-      default:
-        return <Activity className="w-4 h-4" />;
-    }
+function UsersList({
+  users,
+  isLoading,
+  error,
+}: {
+  users: User[];
+  isLoading: boolean;
+  error: string | null;
+}) {
+  const getRoleBadge = (role: string) => {
+    const colors: Record<string, { bg: string; text: string }> = {
+      super_admin: { bg: "var(--danger-light)", text: "var(--danger)" },
+      admin: { bg: "var(--primary-100)", text: "var(--primary)" },
+      manager: { bg: "var(--info-light)", text: "var(--info)" },
+      technician: { bg: "var(--success-light)", text: "var(--success)" },
+      operator: { bg: "var(--warning-light)", text: "var(--warning)" },
+      viewer: {
+        bg: "var(--background-secondary)",
+        text: "var(--foreground-muted)",
+      },
+    };
+    const style = colors[role] || colors.viewer;
+    return (
+      <span
+        className="px-2.5 py-1 rounded-full text-xs font-medium capitalize"
+        style={{ background: style.bg, color: style.text }}
+      >
+        {role.replace("_", " ")}
+      </span>
+    );
   };
 
-  const getActivityColor = (type: string) => {
-    switch (type) {
-      case "org":
-        return "var(--primary)";
-      case "user":
-        return "var(--info)";
-      case "request":
-        return "var(--warning)";
-      case "equipment":
-        return "var(--danger)";
-      case "system":
-        return "var(--success)";
-      default:
-        return "var(--foreground-muted)";
-    }
-  };
+  if (isLoading) {
+    return (
+      <div className="card p-4">
+        <SectionHeader title="Recent Users" />
+        <div className="space-y-3 mt-4">
+          {[1, 2, 3, 4, 5].map((i) => (
+            <div key={i} className="skeleton-card h-12 rounded-xl" />
+          ))}
+        </div>
+      </div>
+    );
+  }
+
+  if (error || users.length === 0) {
+    return (
+      <div className="card p-4">
+        <SectionHeader title="Recent Users" />
+        <div className="mt-4">
+          <EmptyState
+            icon={<Users className="w-8 h-8" />}
+            title={error ? "Failed to load users" : "No users found"}
+            description={error || "Users will appear here"}
+          />
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="card p-4">
-      <SectionHeader title="Recent Activity" />
-      <div className="space-y-4">
-        {recentActivity.map((activity, index) => (
+      <SectionHeader
+        title="Recent Users"
+        action={
+          <button className="btn btn-ghost text-sm">
+            View All
+            <ArrowUpRight className="w-4 h-4" />
+          </button>
+        }
+      />
+      <div className="space-y-3 mt-4">
+        {users.slice(0, 6).map((user, index) => (
           <div
-            key={activity.id}
-            className="flex items-start gap-3 animate-fade-in-left"
-            style={{ animationDelay: `${index * 0.1}s` }}
+            key={user.id}
+            className="flex items-center gap-3 p-3 rounded-xl hover:bg-gray-50 transition-colors animate-fade-in"
+            style={{ animationDelay: `${index * 0.05}s` }}
           >
-            <div
-              className="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0"
-              style={{ background: `${getActivityColor(activity.type)}15` }}
-            >
-              <span style={{ color: getActivityColor(activity.type) }}>
-                {getActivityIcon(activity.type)}
-              </span>
-            </div>
+            <Avatar name={`${user.first_name} ${user.last_name}`} size="md" />
             <div className="flex-1 min-w-0">
-              <p className="text-sm" style={{ color: "var(--foreground)" }}>
-                {activity.action}
-              </p>
-              <p
-                className="text-sm font-medium truncate"
+              <span
+                className="font-medium block"
+                style={{ color: "var(--foreground)" }}
+              >
+                {user.first_name} {user.last_name}
+              </span>
+              <span
+                className="text-sm truncate block"
                 style={{ color: "var(--foreground-muted)" }}
               >
-                {activity.name}
-              </p>
+                {user.email}
+              </span>
             </div>
-            <span
-              className="text-xs whitespace-nowrap"
-              style={{ color: "var(--foreground-subtle)" }}
-            >
-              {activity.time}
-            </span>
+            {getRoleBadge(user.role)}
           </div>
         ))}
       </div>
@@ -316,40 +420,126 @@ function ActivityFeed() {
   );
 }
 
-function TeamPerformance() {
+function AuditLogList({
+  logs,
+  isLoading,
+  error,
+}: {
+  logs: AuditLog[];
+  isLoading: boolean;
+  error: string | null;
+}) {
+  const formatTime = (dateString: string) => {
+    const date = new Date(dateString);
+    const now = new Date();
+    const diff = now.getTime() - date.getTime();
+    const hours = Math.floor(diff / (1000 * 60 * 60));
+    const days = Math.floor(hours / 24);
+
+    if (days > 0) return `${days}d ago`;
+    if (hours > 0) return `${hours}h ago`;
+    return "Just now";
+  };
+
+  const getActionIcon = (action: string) => {
+    switch (action) {
+      case "create":
+        return <Plus className="w-4 h-4" style={{ color: "var(--success)" }} />;
+      case "update":
+        return (
+          <Settings className="w-4 h-4" style={{ color: "var(--info)" }} />
+        );
+      case "delete":
+        return (
+          <AlertTriangle
+            className="w-4 h-4"
+            style={{ color: "var(--danger)" }}
+          />
+        );
+      default:
+        return (
+          <Activity
+            className="w-4 h-4"
+            style={{ color: "var(--foreground-muted)" }}
+          />
+        );
+    }
+  };
+
+  if (isLoading) {
+    return (
+      <div className="card p-4">
+        <SectionHeader title="Activity Feed" />
+        <div className="space-y-3 mt-4">
+          {[1, 2, 3, 4, 5].map((i) => (
+            <div key={i} className="skeleton-card h-12 rounded-xl" />
+          ))}
+        </div>
+      </div>
+    );
+  }
+
+  if (error || logs.length === 0) {
+    return (
+      <div className="card p-4">
+        <SectionHeader title="Activity Feed" />
+        <div className="mt-4">
+          <EmptyState
+            icon={<Activity className="w-8 h-8" />}
+            title={error ? "Failed to load activity" : "No activity yet"}
+            description={error || "Recent activity will appear here"}
+          />
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="card p-4">
       <SectionHeader
-        title="Team Performance"
-        subtitle="Requests by team type"
+        title="Activity Feed"
+        action={
+          <button className="btn btn-ghost text-sm">
+            View All
+            <ArrowUpRight className="w-4 h-4" />
+          </button>
+        }
       />
-      <div className="space-y-4 mt-4">
-        {teamTypeData.map((team, index) => (
+      <div className="space-y-3 mt-4 max-h-96 overflow-y-auto">
+        {logs.slice(0, 10).map((log, index) => (
           <div
-            key={team.type}
-            className="animate-fade-in"
-            style={{ animationDelay: `${index * 0.1}s` }}
+            key={log.id}
+            className="flex items-start gap-3 p-3 rounded-xl hover:bg-gray-50 transition-colors animate-fade-in"
+            style={{ animationDelay: `${index * 0.05}s` }}
           >
-            <div className="flex justify-between items-center mb-2">
-              <span
-                className="text-sm font-medium"
-                style={{ color: "var(--foreground)" }}
-              >
-                {team.type}
-              </span>
-              <span
-                className="text-sm"
-                style={{ color: "var(--foreground-muted)" }}
-              >
-                {team.requests} requests
-              </span>
+            <div
+              className="w-8 h-8 rounded-full flex items-center justify-center shrink-0"
+              style={{ background: "var(--background-secondary)" }}
+            >
+              {getActionIcon(log.action)}
             </div>
-            <ProgressBar value={team.completion} showValue={false} />
-            <div className="flex justify-between mt-1">
-              <span className="text-xs" style={{ color: "var(--success)" }}>
-                {team.completion}% completion rate
-              </span>
+            <div className="flex-1 min-w-0">
+              <p className="text-sm" style={{ color: "var(--foreground)" }}>
+                <span className="font-medium capitalize">{log.action}</span>{" "}
+                <span style={{ color: "var(--foreground-muted)" }}>
+                  {log.resource_type}
+                </span>
+              </p>
+              {log.resource_id && (
+                <p
+                  className="text-xs truncate"
+                  style={{ color: "var(--foreground-muted)" }}
+                >
+                  ID: {log.resource_id}
+                </p>
+              )}
             </div>
+            <span
+              className="text-xs shrink-0"
+              style={{ color: "var(--foreground-subtle)" }}
+            >
+              {formatTime(log.created_at)}
+            </span>
           </div>
         ))}
       </div>
@@ -358,200 +548,101 @@ function TeamPerformance() {
 }
 
 function SystemHealth() {
-  const metrics = [
-    { label: "API Response Time", value: "45ms", status: "good" },
-    { label: "Database Load", value: "23%", status: "good" },
-    { label: "Active Sessions", value: "1,247", status: "good" },
-    { label: "Error Rate", value: "0.02%", status: "good" },
+  const [health, setHealth] = useState({
+    database: "ok",
+    status: "healthy",
+  });
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    const checkHealth = async () => {
+      try {
+        const response = await fetch("http://localhost:8000/health");
+        const data = await response.json();
+        setHealth(data);
+      } catch {
+        setHealth({ database: "error", status: "unhealthy" });
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    checkHealth();
+    const interval = setInterval(checkHealth, 30000);
+    return () => clearInterval(interval);
+  }, []);
+
+  const services = [
+    {
+      name: "API Server",
+      status: health.status === "healthy" ? "operational" : "degraded",
+    },
+    {
+      name: "Database",
+      status: health.database === "ok" ? "operational" : "error",
+    },
+    { name: "Authentication", status: "operational" },
+    { name: "File Storage", status: "operational" },
   ];
 
   return (
     <div className="card p-4">
       <SectionHeader
         title="System Health"
-        action={
-          <span className="badge badge-success">
-            <CheckCircle2 className="w-3 h-3" />
-            All Systems Operational
-          </span>
+        subtitle={
+          isLoading
+            ? "Checking..."
+            : health.status === "healthy"
+            ? "All systems operational"
+            : "Issues detected"
         }
       />
-      <div className="grid grid-cols-2 gap-4 mt-4">
-        {metrics.map((metric, index) => (
+      <div className="space-y-3 mt-4">
+        {services.map((service, index) => (
           <div
-            key={metric.label}
-            className="p-3 rounded-xl animate-fade-in"
+            key={service.name}
+            className="flex items-center justify-between p-3 rounded-xl animate-fade-in"
             style={{
               background: "var(--background-secondary)",
               animationDelay: `${index * 0.1}s`,
             }}
           >
-            <div className="flex items-center gap-2 mb-1">
-              <div className="status-dot status-dot-success" />
-              <span
-                className="text-xs"
+            <div className="flex items-center gap-3">
+              <Server
+                className="w-4 h-4"
                 style={{ color: "var(--foreground-muted)" }}
+              />
+              <span
+                className="text-sm font-medium"
+                style={{ color: "var(--foreground)" }}
               >
-                {metric.label}
+                {service.name}
               </span>
             </div>
-            <span
-              className="text-lg font-semibold"
-              style={{ color: "var(--foreground)" }}
-            >
-              {metric.value}
-            </span>
+            <div className="flex items-center gap-2">
+              <div
+                className={`w-2 h-2 rounded-full ${
+                  service.status === "operational"
+                    ? "bg-green-500"
+                    : service.status === "degraded"
+                    ? "bg-yellow-500"
+                    : "bg-red-500"
+                }`}
+              />
+              <span
+                className="text-xs capitalize"
+                style={{
+                  color:
+                    service.status === "operational"
+                      ? "var(--success)"
+                      : service.status === "degraded"
+                      ? "var(--warning)"
+                      : "var(--danger)",
+                }}
+              >
+                {service.status}
+              </span>
+            </div>
           </div>
-        ))}
-      </div>
-    </div>
-  );
-}
-
-function RequestsChart() {
-  const data = [65, 45, 80, 55, 70, 90, 75, 82, 68, 95, 78, 88];
-  const maxValue = Math.max(...data);
-
-  return (
-    <div className="card p-4">
-      <SectionHeader
-        title="Requests Overview"
-        subtitle="Last 12 months"
-        action={
-          <select
-            className="text-sm px-3 py-1.5 rounded-lg border outline-none"
-            style={{
-              borderColor: "var(--border)",
-              background: "var(--background)",
-            }}
-          >
-            <option>All Organizations</option>
-            <option>Acme Manufacturing</option>
-            <option>TechCorp Industries</option>
-          </select>
-        }
-      />
-      <div className="flex items-end justify-between h-48 gap-2 mt-6 px-2">
-        {data.map((value, index) => (
-          <div
-            key={index}
-            className="flex-1 rounded-t-lg transition-all hover:opacity-80 animate-fade-in-up cursor-pointer"
-            style={{
-              height: `${(value / maxValue) * 100}%`,
-              background:
-                index === data.length - 1
-                  ? "var(--primary)"
-                  : "var(--primary-100)",
-              animationDelay: `${index * 0.05}s`,
-            }}
-            title={`${value} requests`}
-          />
-        ))}
-      </div>
-      <div
-        className="flex justify-between text-xs mt-3 px-2"
-        style={{ color: "var(--foreground-muted)" }}
-      >
-        <span>Jan</span>
-        <span>Feb</span>
-        <span>Mar</span>
-        <span>Apr</span>
-        <span>May</span>
-        <span>Jun</span>
-        <span>Jul</span>
-        <span>Aug</span>
-        <span>Sep</span>
-        <span>Oct</span>
-        <span>Nov</span>
-        <span>Dec</span>
-      </div>
-      <div
-        className="grid grid-cols-3 gap-4 mt-6 pt-4 border-t"
-        style={{ borderColor: "var(--border)" }}
-      >
-        <div className="text-center">
-          <div
-            className="text-2xl font-bold"
-            style={{ color: "var(--primary)" }}
-          >
-            891
-          </div>
-          <div className="text-xs" style={{ color: "var(--foreground-muted)" }}>
-            Total This Year
-          </div>
-        </div>
-        <div className="text-center">
-          <div
-            className="text-2xl font-bold"
-            style={{ color: "var(--success)" }}
-          >
-            847
-          </div>
-          <div className="text-xs" style={{ color: "var(--foreground-muted)" }}>
-            Completed
-          </div>
-        </div>
-        <div className="text-center">
-          <div
-            className="text-2xl font-bold"
-            style={{ color: "var(--warning)" }}
-          >
-            44
-          </div>
-          <div className="text-xs" style={{ color: "var(--foreground-muted)" }}>
-            In Progress
-          </div>
-        </div>
-      </div>
-    </div>
-  );
-}
-
-function QuickActions() {
-  const actions = [
-    {
-      icon: <Building2 className="w-5 h-5" />,
-      label: "Add Organization",
-      color: "var(--primary)",
-    },
-    {
-      icon: <Users className="w-5 h-5" />,
-      label: "Manage Users",
-      color: "var(--info)",
-    },
-    {
-      icon: <Shield className="w-5 h-5" />,
-      label: "Role Matrix",
-      color: "var(--warning)",
-    },
-    {
-      icon: <Server className="w-5 h-5" />,
-      label: "System Logs",
-      color: "var(--success)",
-    },
-  ];
-
-  return (
-    <div className="card p-4">
-      <SectionHeader title="Quick Actions" />
-      <div className="grid grid-cols-2 gap-3 mt-2">
-        {actions.map((action, index) => (
-          <button
-            key={action.label}
-            className="flex items-center gap-3 p-3 rounded-xl text-left transition-all hover:scale-[1.02] animate-fade-in"
-            style={{
-              background: `${action.color}10`,
-              animationDelay: `${index * 0.05}s`,
-            }}
-          >
-            <span style={{ color: action.color }}>{action.icon}</span>
-            <span
-              className="text-sm font-medium"
-              style={{ color: "var(--foreground)" }}
-            >
-              {action.label}
-            </span>
-          </button>
         ))}
       </div>
     </div>
@@ -560,8 +651,65 @@ function QuickActions() {
 
 // ============ MAIN PAGE ============
 export default function SuperAdminDashboard() {
+  const {
+    organizations,
+    isLoading: orgsLoading,
+    error: orgsError,
+    refetch: refetchOrgs,
+  } = useOrganizationList();
+  const { users, isLoading: usersLoading, error: usersError } = useUserList();
+  const { logs, isLoading: logsLoading, error: logsError } = useAuditLog();
+
+  const kpiData = [
+    {
+      label: "Total Organizations",
+      value: organizations.length,
+      icon: <Building2 className="w-6 h-6" />,
+      color: "var(--primary)",
+    },
+    {
+      label: "Total Users",
+      value: users.length,
+      icon: <Users className="w-6 h-6" />,
+      color: "var(--info)",
+    },
+    {
+      label: "Active Orgs",
+      value: organizations.filter((o) => o.is_active).length,
+      icon: <CheckCircle2 className="w-6 h-6" />,
+      color: "var(--success)",
+    },
+    {
+      label: "System Status",
+      value: "Healthy",
+      icon: <Activity className="w-6 h-6" />,
+      color: "var(--success)",
+    },
+  ];
+
   return (
-    <DashboardLayout title="Platform Overview" notificationCount={5}>
+    <DashboardLayout title="Super Admin Dashboard" notificationCount={0}>
+      {/* Header */}
+      <div className="flex items-center gap-3 mb-6">
+        <div
+          className="w-12 h-12 rounded-xl flex items-center justify-center"
+          style={{ background: "var(--primary-100)" }}
+        >
+          <Shield className="w-6 h-6" style={{ color: "var(--primary)" }} />
+        </div>
+        <div>
+          <h2
+            className="text-lg font-bold"
+            style={{ color: "var(--foreground)" }}
+          >
+            Platform Overview
+          </h2>
+          <p className="text-sm" style={{ color: "var(--foreground-muted)" }}>
+            Manage all organizations and system settings
+          </p>
+        </div>
+      </div>
+
       {/* KPI Cards */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
         {kpiData.map((kpi, index) => (
@@ -575,21 +723,25 @@ export default function SuperAdminDashboard() {
         ))}
       </div>
 
-      {/* Main Content Grid */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Left Column - Wide */}
-        <div className="lg:col-span-2 space-y-6">
-          <RequestsChart />
-          <OrganizationTable />
+      {/* Main Content */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
+        <div className="lg:col-span-2">
+          <OrganizationsTable
+            organizations={organizations}
+            isLoading={orgsLoading}
+            error={orgsError}
+            onRefresh={refetchOrgs}
+          />
         </div>
-
-        {/* Right Column */}
         <div className="space-y-6">
           <SystemHealth />
-          <TeamPerformance />
-          <QuickActions />
-          <ActivityFeed />
         </div>
+      </div>
+
+      {/* Bottom Row */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <UsersList users={users} isLoading={usersLoading} error={usersError} />
+        <AuditLogList logs={logs} isLoading={logsLoading} error={logsError} />
       </div>
     </DashboardLayout>
   );

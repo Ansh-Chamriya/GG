@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import {
   DashboardLayout,
   KPICard,
@@ -8,204 +8,236 @@ import {
   StatusBadge,
   PriorityBadge,
   Avatar,
-  ProgressBar,
+  EmptyState,
+  SkeletonTable,
   OverdueIndicator,
 } from "@/app/components/dashboard/shared";
 import {
+  reportService,
+  equipmentService,
+  teamService,
+  workorderService,
+} from "@/app/lib/api/services";
+import {
+  Equipment,
+  Team,
+  WorkOrder,
+  EquipmentStatus,
+} from "@/app/lib/api/config";
+import {
   Settings,
   ClipboardList,
-  Users,
   AlertTriangle,
-  CheckCircle2,
-  Clock,
   Plus,
   MoreHorizontal,
   ArrowUpRight,
-  Wrench,
   Calendar,
   Filter,
   Search,
   MapPin,
-  Tag,
   ChevronRight,
-  Zap,
-  TrendingUp,
-  TrendingDown,
+  RefreshCw,
+  Loader2,
+  Wrench,
+  AlertCircle,
+  Users,
 } from "lucide-react";
 
-// ============ MOCK DATA ============
-const kpiData = [
-  {
-    label: "Total Equipment",
-    value: 456,
-    icon: <Settings className="w-6 h-6" />,
-    trend: { value: 5, isPositive: true },
-    color: "var(--primary)",
-  },
-  {
-    label: "Active Requests",
-    value: 28,
-    icon: <ClipboardList className="w-6 h-6" />,
-    trend: { value: 12, isPositive: false },
-    color: "var(--warning)",
-  },
-  {
-    label: "Overdue Requests",
-    value: 4,
-    icon: <AlertTriangle className="w-6 h-6" />,
-    color: "var(--danger)",
-  },
-  {
-    label: "Preventive This Week",
-    value: 12,
-    icon: <Calendar className="w-6 h-6" />,
-    trend: { value: 8, isPositive: true },
-    color: "var(--success)",
-  },
-];
+// ============ TYPES ============
+interface DashboardStats {
+  total_equipment: number;
+  operational_equipment: number;
+  equipment_in_maintenance: number;
+  equipment_breakdown: number;
+  total_work_orders: number;
+  pending_work_orders: number;
+  in_progress_work_orders: number;
+  completed_work_orders: number;
+  overdue_work_orders: number;
+  upcoming_maintenance: number;
+  low_stock_parts: number;
+  avg_equipment_health: number;
+}
 
-const equipmentData = [
-  {
-    id: 1,
-    name: "HVAC Unit #12",
-    category: "HVAC",
-    department: "Production",
-    location: "Building A",
-    status: "operational",
-    requests: 2,
-  },
-  {
-    id: 2,
-    name: "CNC Machine #5",
-    category: "Machinery",
-    department: "Manufacturing",
-    location: "Floor 2",
-    status: "maintenance",
-    requests: 1,
-  },
-  {
-    id: 3,
-    name: "Forklift FL-03",
-    category: "Vehicles",
-    department: "Warehouse",
-    location: "Dock B",
-    status: "operational",
-    requests: 0,
-  },
-  {
-    id: 4,
-    name: "Server Rack A",
-    category: "IT",
-    department: "IT",
-    location: "Server Room",
-    status: "operational",
-    requests: 3,
-  },
-  {
-    id: 5,
-    name: "Generator #1",
-    category: "Power",
-    department: "Facilities",
-    location: "Basement",
-    status: "scrap",
-    requests: 0,
-  },
-];
+// ============ HOOKS ============
+function useDashboardStats() {
+  const [stats, setStats] = useState<DashboardStats | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
-const teamData = [
-  {
-    id: 1,
-    name: "Mechanics Team",
-    members: 8,
-    activeRequests: 12,
-    avgResponse: "2.5h",
-    lead: "John Smith",
-  },
-  {
-    id: 2,
-    name: "Electricians",
-    members: 5,
-    activeRequests: 8,
-    avgResponse: "1.8h",
-    lead: "Mike Johnson",
-  },
-  {
-    id: 3,
-    name: "IT Support",
-    members: 6,
-    activeRequests: 15,
-    avgResponse: "1.2h",
-    lead: "Sarah Davis",
-  },
-  {
-    id: 4,
-    name: "HVAC Specialists",
-    members: 4,
-    activeRequests: 5,
-    avgResponse: "3.1h",
-    lead: "Tom Wilson",
-  },
-];
+  const fetchStats = useCallback(async () => {
+    try {
+      setIsLoading(true);
+      setError(null);
+      const response = await reportService.getDashboard();
+      if (response.success && response.data) {
+        setStats(response.data as unknown as DashboardStats);
+      }
+    } catch (err) {
+      setError(
+        err instanceof Error ? err.message : "Failed to fetch dashboard stats"
+      );
+    } finally {
+      setIsLoading(false);
+    }
+  }, []);
 
-const recentRequests = [
-  {
-    id: "REQ-001",
-    equipment: "HVAC Unit #12",
-    priority: "high" as const,
-    status: "in-progress" as const,
-    team: "HVAC Specialists",
-    created: "2 hours ago",
-  },
-  {
-    id: "REQ-002",
-    equipment: "Server Rack A",
-    priority: "urgent" as const,
-    status: "new" as const,
-    team: "IT Support",
-    created: "30 mins ago",
-  },
-  {
-    id: "REQ-003",
-    equipment: "CNC Machine #5",
-    priority: "medium" as const,
-    status: "in-progress" as const,
-    team: "Mechanics Team",
-    created: "5 hours ago",
-  },
-  {
-    id: "REQ-004",
-    equipment: "Forklift FL-03",
-    priority: "low" as const,
-    status: "repaired" as const,
-    team: "Mechanics Team",
-    created: "1 day ago",
-  },
-];
+  useEffect(() => {
+    fetchStats();
+  }, [fetchStats]);
 
-const categoryBreakdown = [
-  { category: "Machinery", count: 125, percentage: 28 },
-  { category: "HVAC", count: 89, percentage: 20 },
-  { category: "IT Equipment", count: 112, percentage: 25 },
-  { category: "Vehicles", count: 67, percentage: 15 },
-  { category: "Power Systems", count: 63, percentage: 14 },
-];
+  return { stats, isLoading, error, refetch: fetchStats };
+}
+
+function useEquipmentList() {
+  const [equipment, setEquipment] = useState<Equipment[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  const fetchEquipment = useCallback(async () => {
+    try {
+      setIsLoading(true);
+      setError(null);
+      const response = await equipmentService.list();
+      if (response.success && response.data) {
+        const items = Array.isArray(response.data)
+          ? response.data
+          : (response.data as unknown as { items: Equipment[] }).items || [];
+        setEquipment(items);
+      }
+    } catch (err) {
+      setError(
+        err instanceof Error ? err.message : "Failed to fetch equipment"
+      );
+    } finally {
+      setIsLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    fetchEquipment();
+  }, [fetchEquipment]);
+
+  return { equipment, isLoading, error, refetch: fetchEquipment };
+}
+
+function useTeamList() {
+  const [teams, setTeams] = useState<Team[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  const fetchTeams = useCallback(async () => {
+    try {
+      setIsLoading(true);
+      setError(null);
+      const response = await teamService.list();
+      if (response.success && response.data) {
+        const items = Array.isArray(response.data) ? response.data : [];
+        setTeams(items);
+      }
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Failed to fetch teams");
+    } finally {
+      setIsLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    fetchTeams();
+  }, [fetchTeams]);
+
+  return { teams, isLoading, error, refetch: fetchTeams };
+}
+
+function useWorkOrderList() {
+  const [workOrders, setWorkOrders] = useState<WorkOrder[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  const fetchWorkOrders = useCallback(async () => {
+    try {
+      setIsLoading(true);
+      setError(null);
+      const response = await workorderService.list();
+      if (response.success && response.data) {
+        const items = Array.isArray(response.data)
+          ? response.data
+          : (response.data as unknown as { items: WorkOrder[] }).items || [];
+        setWorkOrders(items);
+      }
+    } catch (err) {
+      setError(
+        err instanceof Error ? err.message : "Failed to fetch work orders"
+      );
+    } finally {
+      setIsLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    fetchWorkOrders();
+  }, [fetchWorkOrders]);
+
+  return { workOrders, isLoading, error, refetch: fetchWorkOrders };
+}
 
 // ============ COMPONENTS ============
-function EquipmentList() {
-  const [filter, setFilter] = useState("all");
+function EquipmentList({
+  equipment,
+  isLoading,
+  error,
+  onRefresh,
+}: {
+  equipment: Equipment[];
+  isLoading: boolean;
+  error: string | null;
+  onRefresh: () => void;
+}) {
+  const [searchQuery, setSearchQuery] = useState("");
 
-  const getStatusBadge = (status: string) => {
+  const filteredEquipment = equipment.filter(
+    (eq) =>
+      eq.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      eq.code?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      eq.category?.name?.toLowerCase().includes(searchQuery.toLowerCase())
+  );
+
+  const getStatusBadge = (status: EquipmentStatus) => {
     switch (status) {
       case "operational":
         return <span className="badge badge-success">Operational</span>;
       case "maintenance":
         return <span className="badge badge-warning">In Maintenance</span>;
-      case "scrap":
-        return <span className="badge badge-neutral">Scrapped</span>;
+      case "breakdown":
+        return <span className="badge badge-danger">Breakdown</span>;
+      case "retired":
+        return <span className="badge badge-neutral">Retired</span>;
       default:
         return null;
     }
   };
+
+  if (error) {
+    return (
+      <div className="card p-8">
+        <EmptyState
+          icon={
+            <AlertCircle
+              className="w-8 h-8"
+              style={{ color: "var(--danger)" }}
+            />
+          }
+          title="Failed to load equipment"
+          description={error}
+          action={
+            <button onClick={onRefresh} className="btn btn-primary text-sm">
+              <RefreshCw className="w-4 h-4" /> Retry
+            </button>
+          }
+        />
+      </div>
+    );
+  }
 
   return (
     <div className="card overflow-hidden">
@@ -228,115 +260,172 @@ function EquipmentList() {
             <input
               type="text"
               placeholder="Search equipment..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
               className="bg-transparent border-none outline-none text-sm w-40"
             />
           </div>
-          <button className="btn btn-secondary text-sm">
-            <Filter className="w-4 h-4" />
-            Filter
-          </button>
-          <button className="btn btn-primary text-sm">
-            <Plus className="w-4 h-4" />
-            Add Equipment
+          <button
+            onClick={onRefresh}
+            className="btn btn-secondary text-sm"
+            disabled={isLoading}
+          >
+            <RefreshCw
+              className={`w-4 h-4 ${isLoading ? "animate-spin" : ""}`}
+            />
           </button>
         </div>
       </div>
-      <div className="overflow-x-auto">
-        <table className="table">
-          <thead>
-            <tr>
-              <th>Equipment</th>
-              <th>Category</th>
-              <th>Department</th>
-              <th>Location</th>
-              <th>Status</th>
-              <th>Requests</th>
-              <th></th>
-            </tr>
-          </thead>
-          <tbody>
-            {equipmentData.map((equipment, index) => (
-              <tr
-                key={equipment.id}
-                className={`animate-fade-in ${
-                  equipment.status === "scrap" ? "opacity-50" : ""
-                }`}
-                style={{ animationDelay: `${index * 0.05}s` }}
-              >
-                <td>
-                  <div className="flex items-center gap-3">
-                    <div
-                      className="w-10 h-10 rounded-lg flex items-center justify-center"
-                      style={{ background: "var(--primary-100)" }}
-                    >
-                      <Settings
-                        className="w-5 h-5"
-                        style={{ color: "var(--primary)" }}
-                      />
-                    </div>
-                    <span className="font-medium">{equipment.name}</span>
-                  </div>
-                </td>
-                <td>
-                  <span className="badge badge-neutral">
-                    {equipment.category}
-                  </span>
-                </td>
-                <td>{equipment.department}</td>
-                <td>
-                  <div
-                    className="flex items-center gap-1.5 text-sm"
-                    style={{ color: "var(--foreground-muted)" }}
-                  >
-                    <MapPin className="w-3.5 h-3.5" />
-                    {equipment.location}
-                  </div>
-                </td>
-                <td>{getStatusBadge(equipment.status)}</td>
-                <td>
-                  {equipment.requests > 0 ? (
-                    <button
-                      className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg transition-all hover:scale-105"
-                      style={{
-                        background:
-                          equipment.requests > 2
-                            ? "var(--danger-light)"
-                            : "var(--warning-light)",
-                        color:
-                          equipment.requests > 2
-                            ? "var(--danger)"
-                            : "var(--warning)",
-                      }}
-                    >
-                      <ClipboardList className="w-3.5 h-3.5" />
-                      <span className="font-medium text-sm">
-                        {equipment.requests}
-                      </span>
-                    </button>
-                  ) : (
-                    <span
-                      className="text-sm"
-                      style={{ color: "var(--foreground-subtle)" }}
-                    >
-                      —
-                    </span>
-                  )}
-                </td>
-                <td>
-                  <button className="btn btn-ghost p-2">
-                    <MoreHorizontal className="w-4 h-4" />
-                  </button>
-                </td>
+
+      {isLoading ? (
+        <SkeletonTable rows={5} />
+      ) : filteredEquipment.length === 0 ? (
+        <div className="p-8">
+          <EmptyState
+            icon={<Settings className="w-8 h-8" />}
+            title="No equipment found"
+            description={
+              searchQuery
+                ? "Try adjusting your search"
+                : "Add your first equipment to get started"
+            }
+          />
+        </div>
+      ) : (
+        <div className="overflow-x-auto">
+          <table className="table">
+            <thead>
+              <tr>
+                <th>Equipment</th>
+                <th>Category</th>
+                <th>Location</th>
+                <th>Status</th>
+                <th>Health</th>
+                <th></th>
               </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
+            </thead>
+            <tbody>
+              {filteredEquipment.slice(0, 10).map((eq, index) => (
+                <tr
+                  key={eq.id}
+                  className="animate-fade-in hover:bg-gray-50 transition-colors"
+                  style={{ animationDelay: `${index * 0.05}s` }}
+                >
+                  <td>
+                    <div className="flex items-center gap-3">
+                      <div
+                        className="w-10 h-10 rounded-lg flex items-center justify-center"
+                        style={{ background: "var(--primary-100)" }}
+                      >
+                        <Settings
+                          className="w-5 h-5"
+                          style={{ color: "var(--primary)" }}
+                        />
+                      </div>
+                      <div>
+                        <span className="font-medium">{eq.name}</span>
+                        {eq.code && (
+                          <p
+                            className="text-xs"
+                            style={{ color: "var(--foreground-muted)" }}
+                          >
+                            {eq.code}
+                          </p>
+                        )}
+                      </div>
+                    </div>
+                  </td>
+                  <td>
+                    <span className="badge badge-neutral">
+                      {eq.category?.name || "Uncategorized"}
+                    </span>
+                  </td>
+                  <td>
+                    <div
+                      className="flex items-center gap-1.5 text-sm"
+                      style={{ color: "var(--foreground-muted)" }}
+                    >
+                      <MapPin className="w-3.5 h-3.5" />
+                      {eq.location?.name || "—"}
+                    </div>
+                  </td>
+                  <td>{getStatusBadge(eq.status)}</td>
+                  <td>
+                    <div className="flex items-center gap-2">
+                      <div
+                        className="w-16 h-2 rounded-full overflow-hidden"
+                        style={{ background: "var(--background-tertiary)" }}
+                      >
+                        <div
+                          className="h-full rounded-full"
+                          style={{
+                            width: `${eq.health_score}%`,
+                            background:
+                              eq.health_score >= 80
+                                ? "var(--success)"
+                                : eq.health_score >= 50
+                                ? "var(--warning)"
+                                : "var(--danger)",
+                          }}
+                        />
+                      </div>
+                      <span className="text-sm font-medium">
+                        {eq.health_score}%
+                      </span>
+                    </div>
+                  </td>
+                  <td>
+                    <button className="btn btn-ghost p-2">
+                      <MoreHorizontal className="w-4 h-4" />
+                    </button>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
     </div>
   );
 }
 
-function TeamCards() {
+function TeamCards({
+  teams,
+  isLoading,
+  error,
+}: {
+  teams: Team[];
+  isLoading: boolean;
+  error: string | null;
+}) {
+  if (isLoading) {
+    return (
+      <div className="card p-4">
+        <SectionHeader title="Maintenance Teams" />
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
+          {[1, 2, 3, 4].map((i) => (
+            <div key={i} className="skeleton-card p-4 rounded-xl h-32" />
+          ))}
+        </div>
+      </div>
+    );
+  }
+
+  if (error || teams.length === 0) {
+    return (
+      <div className="card p-4">
+        <SectionHeader title="Maintenance Teams" />
+        <div className="mt-4">
+          <EmptyState
+            icon={<Users className="w-8 h-8" />}
+            title={error ? "Failed to load teams" : "No teams yet"}
+            description={error || "Create teams to organize your workforce"}
+          />
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="card p-4">
       <SectionHeader
@@ -349,7 +438,7 @@ function TeamCards() {
         }
       />
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
-        {teamData.map((team, index) => (
+        {teams.slice(0, 4).map((team, index) => (
           <div
             key={team.id}
             className="card-interactive p-4 rounded-xl animate-fade-in"
@@ -367,30 +456,22 @@ function TeamCards() {
                   className="text-sm"
                   style={{ color: "var(--foreground-muted)" }}
                 >
-                  Lead: {team.lead}
+                  {team.leader
+                    ? `Lead: ${team.leader.first_name} ${team.leader.last_name}`
+                    : "No leader assigned"}
                 </p>
               </div>
-              <div className="flex -space-x-2">
-                {Array.from({ length: Math.min(team.members, 4) }).map(
-                  (_, i) => (
-                    <Avatar key={i} name={`Member ${i + 1}`} size="sm" />
-                  )
-                )}
-                {team.members > 4 && (
-                  <div
-                    className="w-7 h-7 rounded-full flex items-center justify-center text-xs font-medium border-2"
-                    style={{
-                      background: "var(--background-secondary)",
-                      borderColor: "var(--background)",
-                      color: "var(--foreground-muted)",
-                    }}
-                  >
-                    +{team.members - 4}
-                  </div>
-                )}
+              <div
+                className="w-10 h-10 rounded-lg flex items-center justify-center"
+                style={{ background: "var(--primary-100)" }}
+              >
+                <Users
+                  className="w-5 h-5"
+                  style={{ color: "var(--primary)" }}
+                />
               </div>
             </div>
-            <div className="grid grid-cols-3 gap-3">
+            <div className="grid grid-cols-2 gap-3">
               <div
                 className="text-center p-2 rounded-lg"
                 style={{ background: "var(--background-secondary)" }}
@@ -399,7 +480,7 @@ function TeamCards() {
                   className="text-lg font-semibold"
                   style={{ color: "var(--foreground)" }}
                 >
-                  {team.members}
+                  {team.members_count || 0}
                 </div>
                 <div
                   className="text-xs"
@@ -410,30 +491,16 @@ function TeamCards() {
               </div>
               <div
                 className="text-center p-2 rounded-lg"
-                style={{ background: "var(--warning-light)" }}
+                style={{ background: "var(--primary-100)" }}
               >
                 <div
                   className="text-lg font-semibold"
-                  style={{ color: "var(--warning)" }}
+                  style={{ color: "var(--primary)" }}
                 >
-                  {team.activeRequests}
+                  {team.location?.name || "—"}
                 </div>
-                <div className="text-xs" style={{ color: "var(--warning)" }}>
-                  Active
-                </div>
-              </div>
-              <div
-                className="text-center p-2 rounded-lg"
-                style={{ background: "var(--success-light)" }}
-              >
-                <div
-                  className="text-lg font-semibold"
-                  style={{ color: "var(--success)" }}
-                >
-                  {team.avgResponse}
-                </div>
-                <div className="text-xs" style={{ color: "var(--success)" }}>
-                  Avg Time
+                <div className="text-xs" style={{ color: "var(--primary)" }}>
+                  Location
                 </div>
               </div>
             </div>
@@ -444,11 +511,79 @@ function TeamCards() {
   );
 }
 
-function RecentRequestsList() {
+function RecentWorkOrders({
+  workOrders,
+  isLoading,
+  error,
+}: {
+  workOrders: WorkOrder[];
+  isLoading: boolean;
+  error: string | null;
+}) {
+  const getPriorityFromString = (
+    priority: string
+  ): "low" | "medium" | "high" | "critical" => {
+    if (priority === "critical") return "critical";
+    if (priority === "high") return "high";
+    if (priority === "medium") return "medium";
+    return "low";
+  };
+
+  const getStatusFromString = (
+    status: string
+  ): "pending" | "in_progress" | "completed" | "cancelled" => {
+    if (status === "in_progress") return "in_progress";
+    if (status === "completed") return "completed";
+    if (status === "cancelled") return "cancelled";
+    return "pending";
+  };
+
+  if (isLoading) {
+    return (
+      <div className="card p-4">
+        <SectionHeader title="Recent Work Orders" />
+        <div className="space-y-3 mt-4">
+          {[1, 2, 3, 4].map((i) => (
+            <div key={i} className="skeleton-card h-16 rounded-xl" />
+          ))}
+        </div>
+      </div>
+    );
+  }
+
+  if (error || workOrders.length === 0) {
+    return (
+      <div className="card p-4">
+        <SectionHeader title="Recent Work Orders" />
+        <div className="mt-4">
+          <EmptyState
+            icon={<ClipboardList className="w-8 h-8" />}
+            title={error ? "Failed to load work orders" : "No work orders"}
+            description={
+              error || "Create work orders to track maintenance tasks"
+            }
+          />
+        </div>
+      </div>
+    );
+  }
+
+  const formatTime = (dateString: string) => {
+    const date = new Date(dateString);
+    const now = new Date();
+    const diff = now.getTime() - date.getTime();
+    const hours = Math.floor(diff / (1000 * 60 * 60));
+    const days = Math.floor(hours / 24);
+
+    if (days > 0) return `${days} day${days > 1 ? "s" : ""} ago`;
+    if (hours > 0) return `${hours} hour${hours > 1 ? "s" : ""} ago`;
+    return "Just now";
+  };
+
   return (
     <div className="card p-4">
       <SectionHeader
-        title="Recent Requests"
+        title="Recent Work Orders"
         action={
           <button className="btn btn-ghost text-sm">
             View All
@@ -457,21 +592,21 @@ function RecentRequestsList() {
         }
       />
       <div className="space-y-3 mt-4">
-        {recentRequests.map((request, index) => (
+        {workOrders.slice(0, 5).map((wo, index) => (
           <div
-            key={request.id}
+            key={wo.id}
             className="flex items-center gap-4 p-3 rounded-xl transition-all hover:bg-gray-50 cursor-pointer animate-fade-in-left"
             style={{ animationDelay: `${index * 0.1}s` }}
           >
             <div
               className={`w-1 h-12 rounded-full ${
-                request.priority === "urgent" ? "animate-pulse-danger" : ""
+                wo.priority === "critical" ? "animate-pulse-danger" : ""
               }`}
               style={{
                 background:
-                  request.priority === "urgent"
+                  wo.priority === "critical"
                     ? "var(--danger)"
-                    : request.priority === "high"
+                    : wo.priority === "high"
                     ? "var(--warning)"
                     : "var(--primary)",
               }}
@@ -482,24 +617,24 @@ function RecentRequestsList() {
                   className="font-medium text-sm"
                   style={{ color: "var(--foreground)" }}
                 >
-                  {request.id}
+                  {wo.work_order_number}
                 </span>
-                <PriorityBadge priority={request.priority} />
+                <PriorityBadge priority={getPriorityFromString(wo.priority)} />
               </div>
               <p
                 className="text-sm truncate"
                 style={{ color: "var(--foreground-muted)" }}
               >
-                {request.equipment}
+                {wo.title}
               </p>
             </div>
             <div className="text-right">
-              <StatusBadge status={request.status} />
+              <StatusBadge status={getStatusFromString(wo.status)} />
               <p
                 className="text-xs mt-1"
                 style={{ color: "var(--foreground-subtle)" }}
               >
-                {request.created}
+                {formatTime(wo.created_at)}
               </p>
             </div>
             <ChevronRight
@@ -513,22 +648,36 @@ function RecentRequestsList() {
   );
 }
 
-function CategoryBreakdown() {
-  const colors = [
-    "var(--primary)",
-    "var(--info)",
-    "var(--warning)",
-    "var(--success)",
-    "var(--danger)",
+function StatsBreakdown({ stats }: { stats: DashboardStats | null }) {
+  if (!stats) return null;
+
+  const equipmentByStatus = [
+    {
+      label: "Operational",
+      count: stats.operational_equipment,
+      color: "var(--success)",
+    },
+    {
+      label: "In Maintenance",
+      count: stats.equipment_in_maintenance,
+      color: "var(--warning)",
+    },
+    {
+      label: "Breakdown",
+      count: stats.equipment_breakdown,
+      color: "var(--danger)",
+    },
   ];
+
+  const total = stats.total_equipment || 1;
 
   return (
     <div className="card p-4">
-      <SectionHeader title="Equipment by Category" />
+      <SectionHeader title="Equipment Status" />
       <div className="space-y-4 mt-4">
-        {categoryBreakdown.map((cat, index) => (
+        {equipmentByStatus.map((item, index) => (
           <div
-            key={cat.category}
+            key={item.label}
             className="animate-fade-in"
             style={{ animationDelay: `${index * 0.1}s` }}
           >
@@ -536,20 +685,20 @@ function CategoryBreakdown() {
               <div className="flex items-center gap-2">
                 <div
                   className="w-3 h-3 rounded-full"
-                  style={{ background: colors[index % colors.length] }}
+                  style={{ background: item.color }}
                 />
                 <span
                   className="text-sm font-medium"
                   style={{ color: "var(--foreground)" }}
                 >
-                  {cat.category}
+                  {item.label}
                 </span>
               </div>
               <span
                 className="text-sm"
                 style={{ color: "var(--foreground-muted)" }}
               >
-                {cat.count} units
+                {item.count} units
               </span>
             </div>
             <div
@@ -559,8 +708,8 @@ function CategoryBreakdown() {
               <div
                 className="h-full rounded-full transition-all duration-700"
                 style={{
-                  width: `${cat.percentage}%`,
-                  background: colors[index % colors.length],
+                  width: `${(item.count / total) * 100}%`,
+                  background: item.color,
                 }}
               />
             </div>
@@ -571,13 +720,19 @@ function CategoryBreakdown() {
   );
 }
 
-function MaintenanceRatio() {
-  const corrective = 65;
-  const preventive = 35;
+function WorkOrderRatio({ stats }: { stats: DashboardStats | null }) {
+  if (!stats) return null;
+
+  const totalWO = stats.total_work_orders || 1;
+  const completed = Math.round((stats.completed_work_orders / totalWO) * 100);
+  const inProgress = Math.round(
+    (stats.in_progress_work_orders / totalWO) * 100
+  );
+  const pending = Math.round((stats.pending_work_orders / totalWO) * 100);
 
   return (
     <div className="card p-4">
-      <SectionHeader title="Maintenance Type Ratio" subtitle="This month" />
+      <SectionHeader title="Work Order Status" subtitle="Current overview" />
       <div className="flex items-center justify-center my-6">
         <div className="relative w-36 h-36">
           <svg
@@ -597,9 +752,9 @@ function MaintenanceRatio() {
               cy="50"
               r="40"
               fill="none"
-              stroke="var(--warning)"
+              stroke="var(--success)"
               strokeWidth="12"
-              strokeDasharray={`${corrective * 2.51} 251`}
+              strokeDasharray={`${completed * 2.51} 251`}
               className="transition-all duration-1000"
             />
             <circle
@@ -607,10 +762,21 @@ function MaintenanceRatio() {
               cy="50"
               r="40"
               fill="none"
-              stroke="var(--success)"
+              stroke="var(--warning)"
               strokeWidth="12"
-              strokeDasharray={`${preventive * 2.51} 251`}
-              strokeDashoffset={`-${corrective * 2.51}`}
+              strokeDasharray={`${inProgress * 2.51} 251`}
+              strokeDashoffset={`-${completed * 2.51}`}
+              className="transition-all duration-1000"
+            />
+            <circle
+              cx="50"
+              cy="50"
+              r="40"
+              fill="none"
+              stroke="var(--primary)"
+              strokeWidth="12"
+              strokeDasharray={`${pending * 2.51} 251`}
+              strokeDashoffset={`-${(completed + inProgress) * 2.51}`}
               className="transition-all duration-1000"
             />
           </svg>
@@ -619,7 +785,7 @@ function MaintenanceRatio() {
               className="text-2xl font-bold"
               style={{ color: "var(--foreground)" }}
             >
-              {corrective + preventive}
+              {stats.total_work_orders}
             </span>
             <span
               className="text-xs"
@@ -630,23 +796,32 @@ function MaintenanceRatio() {
           </div>
         </div>
       </div>
-      <div className="flex justify-center gap-6">
-        <div className="flex items-center gap-2">
-          <div
-            className="w-3 h-3 rounded-full"
-            style={{ background: "var(--warning)" }}
-          />
-          <span className="text-sm" style={{ color: "var(--foreground)" }}>
-            Corrective ({corrective}%)
-          </span>
-        </div>
+      <div className="flex flex-wrap justify-center gap-4">
         <div className="flex items-center gap-2">
           <div
             className="w-3 h-3 rounded-full"
             style={{ background: "var(--success)" }}
           />
           <span className="text-sm" style={{ color: "var(--foreground)" }}>
-            Preventive ({preventive}%)
+            Completed ({stats.completed_work_orders})
+          </span>
+        </div>
+        <div className="flex items-center gap-2">
+          <div
+            className="w-3 h-3 rounded-full"
+            style={{ background: "var(--warning)" }}
+          />
+          <span className="text-sm" style={{ color: "var(--foreground)" }}>
+            In Progress ({stats.in_progress_work_orders})
+          </span>
+        </div>
+        <div className="flex items-center gap-2">
+          <div
+            className="w-3 h-3 rounded-full"
+            style={{ background: "var(--primary)" }}
+          />
+          <span className="text-sm" style={{ color: "var(--foreground)" }}>
+            Pending ({stats.pending_work_orders})
           </span>
         </div>
       </div>
@@ -656,11 +831,85 @@ function MaintenanceRatio() {
 
 // ============ MAIN PAGE ============
 export default function AdminDashboard() {
+  const {
+    stats,
+    isLoading: statsLoading,
+    error: statsError,
+    refetch: refetchStats,
+  } = useDashboardStats();
+  const {
+    equipment,
+    isLoading: equipmentLoading,
+    error: equipmentError,
+    refetch: refetchEquipment,
+  } = useEquipmentList();
+  const { teams, isLoading: teamsLoading, error: teamsError } = useTeamList();
+  const {
+    workOrders,
+    isLoading: workOrdersLoading,
+    error: workOrdersError,
+  } = useWorkOrderList();
+
+  const kpiData = [
+    {
+      label: "Total Equipment",
+      value: stats?.total_equipment || 0,
+      icon: <Settings className="w-6 h-6" />,
+      color: "var(--primary)",
+    },
+    {
+      label: "Active Work Orders",
+      value:
+        (stats?.pending_work_orders || 0) +
+        (stats?.in_progress_work_orders || 0),
+      icon: <ClipboardList className="w-6 h-6" />,
+      color: "var(--warning)",
+    },
+    {
+      label: "Overdue",
+      value: stats?.overdue_work_orders || 0,
+      icon: <AlertTriangle className="w-6 h-6" />,
+      color: "var(--danger)",
+    },
+    {
+      label: "Upcoming Maintenance",
+      value: stats?.upcoming_maintenance || 0,
+      icon: <Calendar className="w-6 h-6" />,
+      color: "var(--success)",
+    },
+  ];
+
+  const refreshAll = () => {
+    refetchStats();
+    refetchEquipment();
+  };
+
   return (
-    <DashboardLayout title="Organization Dashboard" notificationCount={3}>
+    <DashboardLayout
+      title="Organization Dashboard"
+      notificationCount={stats?.overdue_work_orders || 0}
+    >
       {/* Alert for Overdue */}
-      <div className="mb-6">
-        <OverdueIndicator count={4} />
+      {(stats?.overdue_work_orders || 0) > 0 && (
+        <div className="mb-6">
+          <OverdueIndicator count={stats?.overdue_work_orders || 0} />
+        </div>
+      )}
+
+      {/* Refresh Button */}
+      <div className="flex justify-end mb-4">
+        <button
+          onClick={refreshAll}
+          disabled={statsLoading || equipmentLoading}
+          className="btn btn-secondary text-sm"
+        >
+          <RefreshCw
+            className={`w-4 h-4 ${
+              statsLoading || equipmentLoading ? "animate-spin" : ""
+            }`}
+          />
+          Refresh
+        </button>
       </div>
 
       {/* KPI Cards */}
@@ -679,18 +928,27 @@ export default function AdminDashboard() {
       {/* Main Content Grid */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
         <div className="lg:col-span-2">
-          <EquipmentList />
+          <EquipmentList
+            equipment={equipment}
+            isLoading={equipmentLoading}
+            error={equipmentError}
+            onRefresh={refetchEquipment}
+          />
         </div>
         <div className="space-y-6">
-          <CategoryBreakdown />
-          <MaintenanceRatio />
+          <StatsBreakdown stats={stats} />
+          <WorkOrderRatio stats={stats} />
         </div>
       </div>
 
       {/* Bottom Row */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <TeamCards />
-        <RecentRequestsList />
+        <TeamCards teams={teams} isLoading={teamsLoading} error={teamsError} />
+        <RecentWorkOrders
+          workOrders={workOrders}
+          isLoading={workOrdersLoading}
+          error={workOrdersError}
+        />
       </div>
     </DashboardLayout>
   );
