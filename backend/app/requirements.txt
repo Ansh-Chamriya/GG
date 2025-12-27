@@ -1,0 +1,31 @@
+# GearGuard Backend Dependencies
+# Core Framework
+fastapi==0.109.0
+uvicorn[standard]==0.27.0
+mangum==0.17.0
+
+# Database - Turso/LibSQL (HTTP client for serverless)
+libsql-client
+
+# Authentication & Security
+python-jose[cryptography]==3.3.0
+passlib[bcrypt]==1.7.4
+python-multipart==0.0.6
+
+# Configuration - Pin compatible versions for Vercel
+pydantic==2.5.3
+pydantic-core==2.14.6
+pydantic-settings==2.1.0
+python-dotenv==1.0.0
+
+# Utilities
+ulid-py==1.1.0
+qrcode[pil]==7.4.2
+pillow==10.2.0
+
+# Date/Time
+python-dateutil==2.8.2
+
+# HTTP Client
+httpx==0.26.0
+anyio>=4.0.0
