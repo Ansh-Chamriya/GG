@@ -34,7 +34,9 @@ class Database:
         'broken pipe',
         'connection refused',
         'eof',
-        'closed'
+        'closed',
+        '505',  # HTTP Version Not Supported (Turso issue)
+        'invalid response',  # Invalid response status from Turso
     ]
     
     def __init__(self):
@@ -208,7 +210,7 @@ class Database:
                     raise
         
         # All retries exhausted
-        logger.error(f"All {retries} retry attempts failed for query: {query}")
+        logger.warning(f"All {retries} retry attempts failed for query: {query[:100]}...")
         raise last_error or Exception("Database connection failed after retries")
     
     def execute_with_reconnect(self, query: str, params: Tuple = ()) -> Any:
@@ -340,10 +342,21 @@ class Database:
                 for statement in statements:
                     statement = statement.strip()
                     if statement and not statement.startswith("--"):
+                        # Determine if this is a non-critical statement
+                        is_index_stmt = "CREATE INDEX" in statement.upper()
+                        
                         try:
-                            self.execute(statement)
+                            # Use single retry for index statements (they're optional)
+                            # Use normal retries for critical statements
+                            retry_count = 1 if is_index_stmt else 3
+                            self.execute(statement, retries=retry_count)
                         except Exception as stmt_error:
-                            logger.warning(f"Statement failed (may be OK): {stmt_error}")
+                            # CREATE INDEX failures are common and not critical
+                            # (index may already exist, or Turso may have temporary issues)
+                            if is_index_stmt:
+                                logger.debug(f"Index creation skipped (may already exist): {stmt_error}")
+                            else:
+                                logger.warning(f"Statement failed (may be OK): {stmt_error}")
                 
                 self.commit()
                 logger.info(f"Migration completed: {sql_file.name}")

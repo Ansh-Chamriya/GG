@@ -29,7 +29,7 @@ logging.basicConfig(
 )
 
 logger = logging.getLogger(__name__)
-print("Debug log : ",os.environ['DEBUG'])
+print("Debug log : ", os.environ.get('DEBUG', 'not set'))
 
 # ===========================================
 # Super Admin Creation
