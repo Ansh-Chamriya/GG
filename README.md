@@ -33,12 +33,14 @@ A comprehensive equipment maintenance management platform that connects equipmen
 ## Overview
 
 **GearGuard** is designed to solve common maintenance management challenges:
+
 - Lost maintenance requests scattered across emails and spreadsheets
 - Lack of real-time visibility into asset health and history
 - Unplanned downtime due to reactive maintenance approaches
 - Poor coordination between maintenance teams and technicians
 
 The platform provides organizations with tools to:
+
 - Track and manage all equipment and machinery
 - Create, assign, and monitor work orders through their lifecycle
 - Schedule preventive maintenance with automatic reminders
@@ -51,6 +53,7 @@ The platform provides organizations with tools to:
 ## Key Features
 
 ### Equipment Management
+
 - Central asset database with full equipment profiles
 - Track by department, location, or assigned employee
 - Warranty tracking, specifications, and documentation
@@ -59,6 +62,7 @@ The platform provides organizations with tools to:
 - Equipment categorization with hierarchical categories
 
 ### Work Order Management
+
 - Four work order types: Preventive, Corrective, Emergency, Inspection
 - Complete status workflow: Pending → In Progress → On Hold → Completed/Cancelled
 - Priority levels: Low, Medium, High, Critical
@@ -67,24 +71,28 @@ The platform provides organizations with tools to:
 - Parts usage tracking per work order
 
 ### Preventive Maintenance Scheduling
+
 - Frequency options: Daily, Weekly, Monthly, Yearly, Meter-based, Custom
 - Automatic work order generation from schedules
 - Overdue maintenance alerts and notifications
 - Checklist templates for standardized procedures
 
 ### Team Management
+
 - Create specialized teams (Mechanics, Electricians, IT, etc.)
 - Automatic assignment based on equipment category
 - Team leader designation and member management
 - Workload visibility across team members
 
 ### Parts Inventory
+
 - Complete spare parts catalog with specifications
 - Stock level tracking with minimum stock alerts
 - Usage history tied to work orders
 - Equipment-to-parts associations
 
 ### Reports & Analytics
+
 - Dashboard with real-time KPIs
 - Equipment health reports
 - Work order summary and completion rates
@@ -94,6 +102,7 @@ The platform provides organizations with tools to:
 - Export to PDF/Excel
 
 ### Calendar & Kanban Views
+
 - Visual calendar for maintenance scheduling
 - Drag-and-drop Kanban board for work orders
 - Click-to-add maintenance jobs
@@ -105,25 +114,25 @@ The platform provides organizations with tools to:
 
 ### Backend
 
-| Component | Technology |
-|-----------|------------|
-| Framework | FastAPI (Python 3.11+) |
-| Database | Turso (LibSQL - SQLite-compatible distributed database) |
-| Authentication | JWT with access and refresh tokens |
-| Password Hashing | bcrypt (via passlib) |
-| Validation | Pydantic v2 |
-| API Documentation | OpenAPI/Swagger (auto-generated) |
+| Component         | Technology                                              |
+| ----------------- | ------------------------------------------------------- |
+| Framework         | FastAPI (Python 3.11+)                                  |
+| Database          | Turso (LibSQL - SQLite-compatible distributed database) |
+| Authentication    | JWT with access and refresh tokens                      |
+| Password Hashing  | bcrypt (via passlib)                                    |
+| Validation        | Pydantic v2                                             |
+| API Documentation | OpenAPI/Swagger (auto-generated)                        |
 
 ### Frontend
 
-| Component | Technology |
-|-----------|------------|
-| Framework | Next.js 16.1 (React 19) |
-| Language | TypeScript 5 |
-| Styling | Tailwind CSS 4 |
+| Component     | Technology                |
+| ------------- | ------------------------- |
+| Framework     | Next.js 16.1 (React 19)   |
+| Language      | TypeScript 5              |
+| Styling       | Tailwind CSS 4            |
 | UI Components | Headless UI, Lucide Icons |
-| Drag & Drop | dnd-kit |
-| Forms | React Hook Form |
+| Drag & Drop   | dnd-kit                   |
+| Forms         | React Hook Form           |
 
 ---
 
@@ -235,6 +244,7 @@ uvicorn app.main:app --reload --port 8000
 ```
 
 Access points:
+
 - **API**: http://localhost:8000
 - **API Documentation (Swagger)**: http://localhost:8000/docs
 - **Health Check**: http://localhost:8000/health
@@ -264,59 +274,66 @@ Access the application at: http://localhost:3000
 The system uses **27 tables** organized into logical domains:
 
 ### Authentication & Users
-| Table | Description |
-|-------|-------------|
-| `users` | User accounts with profiles and credentials |
-| `roles` | Role definitions (super_admin, admin, manager, technician, operator, viewer) |
-| `permissions` | Permission definitions in resource:action format |
-| `role_permissions` | Role-to-permission mappings |
-| `sessions` | Active user sessions for JWT refresh token management |
-| `password_reset_tokens` | Password recovery tokens |
+
+| Table                   | Description                                                                  |
+| ----------------------- | ---------------------------------------------------------------------------- |
+| `users`                 | User accounts with profiles and credentials                                  |
+| `roles`                 | Role definitions (super_admin, admin, manager, technician, operator, viewer) |
+| `permissions`           | Permission definitions in resource:action format                             |
+| `role_permissions`      | Role-to-permission mappings                                                  |
+| `sessions`              | Active user sessions for JWT refresh token management                        |
+| `password_reset_tokens` | Password recovery tokens                                                     |
 
 ### Organization & Locations
-| Table | Description |
-|-------|-------------|
-| `organizations` | Multi-tenant organization data |
-| `locations` | Hierarchical facility/site locations (site → building → floor → room → area) |
-| `teams` | Technician team definitions |
-| `team_members` | Team membership |
+
+| Table           | Description                                                                  |
+| --------------- | ---------------------------------------------------------------------------- |
+| `organizations` | Multi-tenant organization data                                               |
+| `locations`     | Hierarchical facility/site locations (site → building → floor → room → area) |
+| `teams`         | Technician team definitions                                                  |
+| `team_members`  | Team membership                                                              |
 
 ### Equipment
-| Table | Description |
-|-------|-------------|
-| `equipment` | Main equipment/asset records |
+
+| Table                  | Description                           |
+| ---------------------- | ------------------------------------- |
+| `equipment`            | Main equipment/asset records          |
 | `equipment_categories` | Hierarchical equipment classification |
-| `meter_readings` | Equipment meter/usage tracking |
-| `equipment_parts` | Equipment-to-parts associations |
-| `maintenance_history` | Equipment maintenance log |
+| `meter_readings`       | Equipment meter/usage tracking        |
+| `equipment_parts`      | Equipment-to-parts associations       |
+| `maintenance_history`  | Equipment maintenance log             |
 
 ### Maintenance
-| Table | Description |
-|-------|-------------|
+
+| Table                   | Description                      |
+| ----------------------- | -------------------------------- |
 | `maintenance_schedules` | Preventive maintenance schedules |
-| `checklist_templates` | Reusable maintenance checklists |
+| `checklist_templates`   | Reusable maintenance checklists  |
 
 ### Work Orders
-| Table | Description |
-|-------|-------------|
-| `work_orders` | Work order management |
-| `work_order_tasks` | Task breakdown for work orders |
-| `work_order_comments` | Communication on work orders |
-| `work_order_checklists` | Completed checklist responses |
+
+| Table                   | Description                    |
+| ----------------------- | ------------------------------ |
+| `work_orders`           | Work order management          |
+| `work_order_tasks`      | Task breakdown for work orders |
+| `work_order_comments`   | Communication on work orders   |
+| `work_order_checklists` | Completed checklist responses  |
 
 ### Inventory
-| Table | Description |
-|-------|-------------|
-| `parts_inventory` | Spare parts catalog |
-| `parts_usage` | Parts consumption tracking |
+
+| Table             | Description                |
+| ----------------- | -------------------------- |
+| `parts_inventory` | Spare parts catalog        |
+| `parts_usage`     | Parts consumption tracking |
 
 ### System
-| Table | Description |
-|-------|-------------|
-| `notifications` | User notifications |
-| `audit_logs` | System audit trail |
-| `reports` | Saved report configurations |
-| `dashboards` | Custom dashboard layouts |
+
+| Table           | Description                 |
+| --------------- | --------------------------- |
+| `notifications` | User notifications          |
+| `audit_logs`    | System audit trail          |
+| `reports`       | Saved report configurations |
+| `dashboards`    | Custom dashboard layouts    |
 
 ---
 
@@ -326,198 +343,198 @@ The API is organized into logical groups with RESTful endpoints. All endpoints a
 
 ### Authentication (10 endpoints)
 
-| Method | Endpoint | Description | Auth Required |
-|--------|----------|-------------|---------------|
-| `POST` | `/auth/register` | Register new user | No |
-| `POST` | `/auth/login` | User login, returns JWT tokens | No |
-| `POST` | `/auth/logout` | Invalidate session | Yes |
-| `POST` | `/auth/refresh` | Refresh access token | Yes (Refresh Token) |
-| `POST` | `/auth/forgot-password` | Request password reset email | No |
-| `POST` | `/auth/reset-password` | Reset password with token | No |
-| `GET` | `/auth/verify-email/{token}` | Verify email address | No |
-| `GET` | `/auth/me` | Get current user profile | Yes |
-| `PUT` | `/auth/me` | Update current user profile | Yes |
-| `PUT` | `/auth/me/password` | Change password | Yes |
+| Method | Endpoint                     | Description                    | Auth Required       |
+| ------ | ---------------------------- | ------------------------------ | ------------------- |
+| `POST` | `/auth/register`             | Register new user              | No                  |
+| `POST` | `/auth/login`                | User login, returns JWT tokens | No                  |
+| `POST` | `/auth/logout`               | Invalidate session             | Yes                 |
+| `POST` | `/auth/refresh`              | Refresh access token           | Yes (Refresh Token) |
+| `POST` | `/auth/forgot-password`      | Request password reset email   | No                  |
+| `POST` | `/auth/reset-password`       | Reset password with token      | No                  |
+| `GET`  | `/auth/verify-email/{token}` | Verify email address           | No                  |
+| `GET`  | `/auth/me`                   | Get current user profile       | Yes                 |
+| `PUT`  | `/auth/me`                   | Update current user profile    | Yes                 |
+| `PUT`  | `/auth/me/password`          | Change password                | Yes                 |
 
 ### Organizations (6 endpoints)
 
-| Method | Endpoint | Description | Permission |
-|--------|----------|-------------|------------|
-| `POST` | `/organizations` | Create organization | `organization:create` |
-| `GET` | `/organizations` | List organizations | `organization:read` |
-| `GET` | `/organizations/{id}` | Get organization details | `organization:read` |
-| `PUT` | `/organizations/{id}` | Update organization | `organization:update` |
-| `DELETE` | `/organizations/{id}` | Delete organization | `organization:delete` |
-| `GET` | `/organizations/{id}/stats` | Get organization statistics | `organization:read` |
+| Method   | Endpoint                    | Description                 | Permission            |
+| -------- | --------------------------- | --------------------------- | --------------------- |
+| `POST`   | `/organizations`            | Create organization         | `organization:create` |
+| `GET`    | `/organizations`            | List organizations          | `organization:read`   |
+| `GET`    | `/organizations/{id}`       | Get organization details    | `organization:read`   |
+| `PUT`    | `/organizations/{id}`       | Update organization         | `organization:update` |
+| `DELETE` | `/organizations/{id}`       | Delete organization         | `organization:delete` |
+| `GET`    | `/organizations/{id}/stats` | Get organization statistics | `organization:read`   |
 
 ### Users (8 endpoints)
 
-| Method | Endpoint | Description | Permission |
-|--------|----------|-------------|------------|
-| `POST` | `/users` | Create user | `user:create` |
-| `GET` | `/users` | List users (with filters) | `user:read` |
-| `GET` | `/users/{id}` | Get user details | `user:read` |
-| `PUT` | `/users/{id}` | Update user | `user:update` |
-| `DELETE` | `/users/{id}` | Delete/deactivate user | `user:delete` |
-| `PUT` | `/users/{id}/role` | Change user role | `user:manage_roles` |
-| `GET` | `/users/{id}/workorders` | Get user's work orders | `user:read` |
-| `GET` | `/users/{id}/activity` | Get user activity log | `user:read` |
+| Method   | Endpoint                 | Description               | Permission          |
+| -------- | ------------------------ | ------------------------- | ------------------- |
+| `POST`   | `/users`                 | Create user               | `user:create`       |
+| `GET`    | `/users`                 | List users (with filters) | `user:read`         |
+| `GET`    | `/users/{id}`            | Get user details          | `user:read`         |
+| `PUT`    | `/users/{id}`            | Update user               | `user:update`       |
+| `DELETE` | `/users/{id}`            | Delete/deactivate user    | `user:delete`       |
+| `PUT`    | `/users/{id}/role`       | Change user role          | `user:manage_roles` |
+| `GET`    | `/users/{id}/workorders` | Get user's work orders    | `user:read`         |
+| `GET`    | `/users/{id}/activity`   | Get user activity log     | `user:read`         |
 
 ### Locations (6 endpoints)
 
-| Method | Endpoint | Description | Permission |
-|--------|----------|-------------|------------|
-| `POST` | `/locations` | Create location | `equipment:create` |
-| `GET` | `/locations` | List locations | `equipment:read` |
-| `GET` | `/locations/{id}` | Get location details | `equipment:read` |
-| `PUT` | `/locations/{id}` | Update location | `equipment:update` |
-| `DELETE` | `/locations/{id}` | Delete location | `equipment:delete` |
-| `GET` | `/locations/{id}/equipment` | Get equipment at location | `equipment:read` |
+| Method   | Endpoint                    | Description               | Permission         |
+| -------- | --------------------------- | ------------------------- | ------------------ |
+| `POST`   | `/locations`                | Create location           | `equipment:create` |
+| `GET`    | `/locations`                | List locations            | `equipment:read`   |
+| `GET`    | `/locations/{id}`           | Get location details      | `equipment:read`   |
+| `PUT`    | `/locations/{id}`           | Update location           | `equipment:update` |
+| `DELETE` | `/locations/{id}`           | Delete location           | `equipment:delete` |
+| `GET`    | `/locations/{id}/equipment` | Get equipment at location | `equipment:read`   |
 
 ### Equipment (13 endpoints)
 
-| Method | Endpoint | Description | Permission |
-|--------|----------|-------------|------------|
-| `POST` | `/equipment` | Create equipment | `equipment:create` |
-| `GET` | `/equipment` | List equipment (with filters) | `equipment:read` |
-| `GET` | `/equipment/{id}` | Get equipment details | `equipment:read` |
-| `PUT` | `/equipment/{id}` | Update equipment | `equipment:update` |
-| `DELETE` | `/equipment/{id}` | Delete equipment | `equipment:delete` |
-| `GET` | `/equipment/{id}/history` | Get maintenance history | `equipment:read` |
-| `GET` | `/equipment/{id}/workorders` | Get related work orders | `workorder:read` |
-| `GET` | `/equipment/{id}/schedules` | Get maintenance schedules | `schedule:read` |
-| `GET` | `/equipment/{id}/parts` | Get associated parts | `parts:read` |
-| `POST` | `/equipment/{id}/meter-reading` | Add meter reading | `equipment:update` |
-| `GET` | `/equipment/{id}/meter-readings` | Get meter readings | `equipment:read` |
-| `POST` | `/equipment/{id}/report-issue` | Report equipment issue | `equipment:report_issue` |
-| `GET` | `/equipment/{id}/qr` | Generate QR code | `equipment:read` |
+| Method   | Endpoint                         | Description                   | Permission               |
+| -------- | -------------------------------- | ----------------------------- | ------------------------ |
+| `POST`   | `/equipment`                     | Create equipment              | `equipment:create`       |
+| `GET`    | `/equipment`                     | List equipment (with filters) | `equipment:read`         |
+| `GET`    | `/equipment/{id}`                | Get equipment details         | `equipment:read`         |
+| `PUT`    | `/equipment/{id}`                | Update equipment              | `equipment:update`       |
+| `DELETE` | `/equipment/{id}`                | Delete equipment              | `equipment:delete`       |
+| `GET`    | `/equipment/{id}/history`        | Get maintenance history       | `equipment:read`         |
+| `GET`    | `/equipment/{id}/workorders`     | Get related work orders       | `workorder:read`         |
+| `GET`    | `/equipment/{id}/schedules`      | Get maintenance schedules     | `schedule:read`          |
+| `GET`    | `/equipment/{id}/parts`          | Get associated parts          | `parts:read`             |
+| `POST`   | `/equipment/{id}/meter-reading`  | Add meter reading             | `equipment:update`       |
+| `GET`    | `/equipment/{id}/meter-readings` | Get meter readings            | `equipment:read`         |
+| `POST`   | `/equipment/{id}/report-issue`   | Report equipment issue        | `equipment:report_issue` |
+| `GET`    | `/equipment/{id}/qr`             | Generate QR code              | `equipment:read`         |
 
 ### Equipment Categories (5 endpoints)
 
-| Method | Endpoint | Description | Permission |
-|--------|----------|-------------|------------|
-| `POST` | `/categories` | Create category | `equipment:create` |
-| `GET` | `/categories` | List categories | `equipment:read` |
-| `GET` | `/categories/{id}` | Get category details | `equipment:read` |
-| `PUT` | `/categories/{id}` | Update category | `equipment:update` |
-| `DELETE` | `/categories/{id}` | Delete category | `equipment:delete` |
+| Method   | Endpoint           | Description          | Permission         |
+| -------- | ------------------ | -------------------- | ------------------ |
+| `POST`   | `/categories`      | Create category      | `equipment:create` |
+| `GET`    | `/categories`      | List categories      | `equipment:read`   |
+| `GET`    | `/categories/{id}` | Get category details | `equipment:read`   |
+| `PUT`    | `/categories/{id}` | Update category      | `equipment:update` |
+| `DELETE` | `/categories/{id}` | Delete category      | `equipment:delete` |
 
 ### Maintenance Schedules (8 endpoints)
 
-| Method | Endpoint | Description | Permission |
-|--------|----------|-------------|------------|
-| `POST` | `/schedules` | Create schedule | `schedule:create` |
-| `GET` | `/schedules` | List schedules | `schedule:read` |
-| `GET` | `/schedules/{id}` | Get schedule details | `schedule:read` |
-| `PUT` | `/schedules/{id}` | Update schedule | `schedule:update` |
-| `DELETE` | `/schedules/{id}` | Delete schedule | `schedule:delete` |
-| `POST` | `/schedules/{id}/generate-workorder` | Generate work order from schedule | `workorder:create` |
-| `GET` | `/schedules/upcoming` | Get upcoming maintenance | `schedule:read` |
-| `GET` | `/schedules/overdue` | Get overdue maintenance | `schedule:read` |
+| Method   | Endpoint                             | Description                       | Permission         |
+| -------- | ------------------------------------ | --------------------------------- | ------------------ |
+| `POST`   | `/schedules`                         | Create schedule                   | `schedule:create`  |
+| `GET`    | `/schedules`                         | List schedules                    | `schedule:read`    |
+| `GET`    | `/schedules/{id}`                    | Get schedule details              | `schedule:read`    |
+| `PUT`    | `/schedules/{id}`                    | Update schedule                   | `schedule:update`  |
+| `DELETE` | `/schedules/{id}`                    | Delete schedule                   | `schedule:delete`  |
+| `POST`   | `/schedules/{id}/generate-workorder` | Generate work order from schedule | `workorder:create` |
+| `GET`    | `/schedules/upcoming`                | Get upcoming maintenance          | `schedule:read`    |
+| `GET`    | `/schedules/overdue`                 | Get overdue maintenance           | `schedule:read`    |
 
 ### Work Orders (18 endpoints)
 
-| Method | Endpoint | Description | Permission |
-|--------|----------|-------------|------------|
-| `POST` | `/workorders` | Create work order | `workorder:create` |
-| `GET` | `/workorders` | List work orders (with filters) | `workorder:read` |
-| `GET` | `/workorders/{id}` | Get work order details | `workorder:read` |
-| `PUT` | `/workorders/{id}` | Update work order | `workorder:update` |
-| `DELETE` | `/workorders/{id}` | Delete work order | `workorder:delete` |
-| `PUT` | `/workorders/{id}/status` | Update status | `workorder:update` |
-| `PUT` | `/workorders/{id}/assign` | Assign work order | `workorder:assign` |
-| `POST` | `/workorders/{id}/start` | Start work order | `workorder:update` |
-| `POST` | `/workorders/{id}/complete` | Complete work order | `workorder:complete` |
-| `POST` | `/workorders/{id}/hold` | Put on hold | `workorder:update` |
-| `POST` | `/workorders/{id}/cancel` | Cancel work order | `workorder:update` |
-| `GET` | `/workorders/{id}/tasks` | Get tasks | `workorder:read` |
-| `PUT` | `/workorders/{id}/tasks/{task_id}` | Update task | `workorder:update` |
-| `GET` | `/workorders/{id}/comments` | Get comments | `workorder:read` |
-| `POST` | `/workorders/{id}/comments` | Add comment | `workorder:update` |
-| `POST` | `/workorders/{id}/parts` | Add parts used | `parts:use` |
-| `GET` | `/workorders/{id}/checklist` | Get checklist | `workorder:read` |
-| `PUT` | `/workorders/{id}/checklist` | Update checklist | `workorder:update` |
+| Method   | Endpoint                           | Description                     | Permission           |
+| -------- | ---------------------------------- | ------------------------------- | -------------------- |
+| `POST`   | `/workorders`                      | Create work order               | `workorder:create`   |
+| `GET`    | `/workorders`                      | List work orders (with filters) | `workorder:read`     |
+| `GET`    | `/workorders/{id}`                 | Get work order details          | `workorder:read`     |
+| `PUT`    | `/workorders/{id}`                 | Update work order               | `workorder:update`   |
+| `DELETE` | `/workorders/{id}`                 | Delete work order               | `workorder:delete`   |
+| `PUT`    | `/workorders/{id}/status`          | Update status                   | `workorder:update`   |
+| `PUT`    | `/workorders/{id}/assign`          | Assign work order               | `workorder:assign`   |
+| `POST`   | `/workorders/{id}/start`           | Start work order                | `workorder:update`   |
+| `POST`   | `/workorders/{id}/complete`        | Complete work order             | `workorder:complete` |
+| `POST`   | `/workorders/{id}/hold`            | Put on hold                     | `workorder:update`   |
+| `POST`   | `/workorders/{id}/cancel`          | Cancel work order               | `workorder:update`   |
+| `GET`    | `/workorders/{id}/tasks`           | Get tasks                       | `workorder:read`     |
+| `PUT`    | `/workorders/{id}/tasks/{task_id}` | Update task                     | `workorder:update`   |
+| `GET`    | `/workorders/{id}/comments`        | Get comments                    | `workorder:read`     |
+| `POST`   | `/workorders/{id}/comments`        | Add comment                     | `workorder:update`   |
+| `POST`   | `/workorders/{id}/parts`           | Add parts used                  | `parts:use`          |
+| `GET`    | `/workorders/{id}/checklist`       | Get checklist                   | `workorder:read`     |
+| `PUT`    | `/workorders/{id}/checklist`       | Update checklist                | `workorder:update`   |
 
 ### Teams (8 endpoints)
 
-| Method | Endpoint | Description | Permission |
-|--------|----------|-------------|------------|
-| `POST` | `/teams` | Create team | `user:manage_roles` |
-| `GET` | `/teams` | List teams | `user:read` |
-| `GET` | `/teams/{id}` | Get team details | `user:read` |
-| `PUT` | `/teams/{id}` | Update team | `user:manage_roles` |
-| `DELETE` | `/teams/{id}` | Delete team | `user:manage_roles` |
-| `POST` | `/teams/{id}/members` | Add team member | `user:manage_roles` |
-| `DELETE` | `/teams/{id}/members/{user_id}` | Remove member | `user:manage_roles` |
-| `GET` | `/teams/{id}/workorders` | Get team's work orders | `workorder:read` |
+| Method   | Endpoint                        | Description            | Permission          |
+| -------- | ------------------------------- | ---------------------- | ------------------- |
+| `POST`   | `/teams`                        | Create team            | `user:manage_roles` |
+| `GET`    | `/teams`                        | List teams             | `user:read`         |
+| `GET`    | `/teams/{id}`                   | Get team details       | `user:read`         |
+| `PUT`    | `/teams/{id}`                   | Update team            | `user:manage_roles` |
+| `DELETE` | `/teams/{id}`                   | Delete team            | `user:manage_roles` |
+| `POST`   | `/teams/{id}/members`           | Add team member        | `user:manage_roles` |
+| `DELETE` | `/teams/{id}/members/{user_id}` | Remove member          | `user:manage_roles` |
+| `GET`    | `/teams/{id}/workorders`        | Get team's work orders | `workorder:read`    |
 
 ### Parts Inventory (9 endpoints)
 
-| Method | Endpoint | Description | Permission |
-|--------|----------|-------------|------------|
-| `POST` | `/parts` | Create part | `parts:create` |
-| `GET` | `/parts` | List parts (with filters) | `parts:read` |
-| `GET` | `/parts/{id}` | Get part details | `parts:read` |
-| `PUT` | `/parts/{id}` | Update part | `parts:update` |
-| `DELETE` | `/parts/{id}` | Delete part | `parts:delete` |
-| `POST` | `/parts/{id}/adjust-stock` | Adjust stock level | `parts:update` |
-| `GET` | `/parts/{id}/usage-history` | Get usage history | `parts:read` |
-| `GET` | `/parts/low-stock` | Get low stock alerts | `parts:read` |
-| `POST` | `/parts/{id}/equipment` | Link part to equipment | `parts:update` |
+| Method   | Endpoint                    | Description               | Permission     |
+| -------- | --------------------------- | ------------------------- | -------------- |
+| `POST`   | `/parts`                    | Create part               | `parts:create` |
+| `GET`    | `/parts`                    | List parts (with filters) | `parts:read`   |
+| `GET`    | `/parts/{id}`               | Get part details          | `parts:read`   |
+| `PUT`    | `/parts/{id}`               | Update part               | `parts:update` |
+| `DELETE` | `/parts/{id}`               | Delete part               | `parts:delete` |
+| `POST`   | `/parts/{id}/adjust-stock`  | Adjust stock level        | `parts:update` |
+| `GET`    | `/parts/{id}/usage-history` | Get usage history         | `parts:read`   |
+| `GET`    | `/parts/low-stock`          | Get low stock alerts      | `parts:read`   |
+| `POST`   | `/parts/{id}/equipment`     | Link part to equipment    | `parts:update` |
 
 ### Checklist Templates (5 endpoints)
 
-| Method | Endpoint | Description | Permission |
-|--------|----------|-------------|------------|
-| `POST` | `/checklists` | Create template | `schedule:create` |
-| `GET` | `/checklists` | List templates | `schedule:read` |
-| `GET` | `/checklists/{id}` | Get template details | `schedule:read` |
-| `PUT` | `/checklists/{id}` | Update template | `schedule:update` |
-| `DELETE` | `/checklists/{id}` | Delete template | `schedule:delete` |
+| Method   | Endpoint           | Description          | Permission        |
+| -------- | ------------------ | -------------------- | ----------------- |
+| `POST`   | `/checklists`      | Create template      | `schedule:create` |
+| `GET`    | `/checklists`      | List templates       | `schedule:read`   |
+| `GET`    | `/checklists/{id}` | Get template details | `schedule:read`   |
+| `PUT`    | `/checklists/{id}` | Update template      | `schedule:update` |
+| `DELETE` | `/checklists/{id}` | Delete template      | `schedule:delete` |
 
 ### Notifications (6 endpoints)
 
-| Method | Endpoint | Description | Permission |
-|--------|----------|-------------|------------|
-| `GET` | `/notifications` | Get user notifications | Own only |
-| `PUT` | `/notifications/{id}/read` | Mark as read | Own only |
-| `PUT` | `/notifications/read-all` | Mark all as read | Own only |
-| `DELETE` | `/notifications/{id}` | Delete notification | Own only |
-| `GET` | `/notifications/settings` | Get notification settings | Own only |
-| `PUT` | `/notifications/settings` | Update settings | Own only |
+| Method   | Endpoint                   | Description               | Permission |
+| -------- | -------------------------- | ------------------------- | ---------- |
+| `GET`    | `/notifications`           | Get user notifications    | Own only   |
+| `PUT`    | `/notifications/{id}/read` | Mark as read              | Own only   |
+| `PUT`    | `/notifications/read-all`  | Mark all as read          | Own only   |
+| `DELETE` | `/notifications/{id}`      | Delete notification       | Own only   |
+| `GET`    | `/notifications/settings`  | Get notification settings | Own only   |
+| `PUT`    | `/notifications/settings`  | Update settings           | Own only   |
 
 ### Reports & Analytics (11 endpoints)
 
-| Method | Endpoint | Description | Permission |
-|--------|----------|-------------|------------|
-| `GET` | `/reports/dashboard` | Get dashboard data | `report:read` |
-| `GET` | `/reports/equipment-health` | Equipment health report | `report:read` |
-| `GET` | `/reports/workorder-summary` | Work order summary | `report:read` |
-| `GET` | `/reports/maintenance-costs` | Maintenance cost report | `report:read` |
-| `GET` | `/reports/technician-performance` | Technician performance | `report:read` |
-| `GET` | `/reports/downtime` | Downtime analysis | `report:read` |
-| `GET` | `/reports/parts-usage` | Parts usage report | `report:read` |
-| `POST` | `/reports/custom` | Generate custom report | `report:create` |
-| `GET` | `/reports/saved` | Get saved reports | `report:read` |
-| `POST` | `/reports/saved` | Save report | `report:create` |
-| `GET` | `/reports/export/{format}` | Export report (PDF/Excel) | `report:export` |
+| Method | Endpoint                          | Description               | Permission      |
+| ------ | --------------------------------- | ------------------------- | --------------- |
+| `GET`  | `/reports/dashboard`              | Get dashboard data        | `report:read`   |
+| `GET`  | `/reports/equipment-health`       | Equipment health report   | `report:read`   |
+| `GET`  | `/reports/workorder-summary`      | Work order summary        | `report:read`   |
+| `GET`  | `/reports/maintenance-costs`      | Maintenance cost report   | `report:read`   |
+| `GET`  | `/reports/technician-performance` | Technician performance    | `report:read`   |
+| `GET`  | `/reports/downtime`               | Downtime analysis         | `report:read`   |
+| `GET`  | `/reports/parts-usage`            | Parts usage report        | `report:read`   |
+| `POST` | `/reports/custom`                 | Generate custom report    | `report:create` |
+| `GET`  | `/reports/saved`                  | Get saved reports         | `report:read`   |
+| `POST` | `/reports/saved`                  | Save report               | `report:create` |
+| `GET`  | `/reports/export/{format}`        | Export report (PDF/Excel) | `report:export` |
 
 ### Audit Logs (2 endpoints)
 
-| Method | Endpoint | Description | Permission |
-|--------|----------|-------------|------------|
-| `GET` | `/audit-logs` | Get audit logs | `audit:read` |
-| `GET` | `/audit-logs/{resource}/{id}` | Get resource audit trail | `audit:read` |
+| Method | Endpoint                      | Description              | Permission   |
+| ------ | ----------------------------- | ------------------------ | ------------ |
+| `GET`  | `/audit-logs`                 | Get audit logs           | `audit:read` |
+| `GET`  | `/audit-logs/{resource}/{id}` | Get resource audit trail | `audit:read` |
 
 ### Dashboards (5 endpoints)
 
-| Method | Endpoint | Description | Permission |
-|--------|----------|-------------|------------|
-| `GET` | `/dashboards` | Get user dashboards | Own only |
-| `POST` | `/dashboards` | Create dashboard | Own only |
-| `GET` | `/dashboards/{id}` | Get dashboard | Own only |
-| `PUT` | `/dashboards/{id}` | Update dashboard | Own only |
-| `DELETE` | `/dashboards/{id}` | Delete dashboard | Own only |
+| Method   | Endpoint           | Description         | Permission |
+| -------- | ------------------ | ------------------- | ---------- |
+| `GET`    | `/dashboards`      | Get user dashboards | Own only   |
+| `POST`   | `/dashboards`      | Create dashboard    | Own only   |
+| `GET`    | `/dashboards/{id}` | Get dashboard       | Own only   |
+| `PUT`    | `/dashboards/{id}` | Update dashboard    | Own only   |
+| `DELETE` | `/dashboards/{id}` | Delete dashboard    | Own only   |
 
 ---
 
@@ -527,31 +544,32 @@ The system implements a hierarchical role-based access control system with 6 pre
 
 ### Role Hierarchy
 
-| Role | Level | Description |
-|------|-------|-------------|
-| **Super Admin** | 1 | Full system access across all organizations |
-| **Admin** | 2 | Organization-level admin, manages users & settings |
-| **Manager** | 3 | Manages equipment, work orders, and technicians |
-| **Technician** | 4 | Performs maintenance, updates work orders |
-| **Operator** | 5 | Views equipment, reports issues |
-| **Viewer** | 6 | Read-only access |
+| Role            | Level | Description                                        |
+| --------------- | ----- | -------------------------------------------------- |
+| **Super Admin** | 1     | Full system access across all organizations        |
+| **Admin**       | 2     | Organization-level admin, manages users & settings |
+| **Manager**     | 3     | Manages equipment, work orders, and technicians    |
+| **Technician**  | 4     | Performs maintenance, updates work orders          |
+| **Operator**    | 5     | Views equipment, reports issues                    |
+| **Viewer**      | 6     | Read-only access                                   |
 
 ### Permission Matrix
 
-| Resource | Super Admin | Admin | Manager | Technician | Operator | Viewer |
-|----------|-------------|-------|---------|------------|----------|--------|
-| **Organizations** | CRUD | Read Own | Read Own | Read Own | Read Own | Read Own |
-| **Users** | CRUD All | CRUD Org | Read Team | Read Self | Read Self | Read Self |
-| **Equipment** | CRUD All | CRUD Org | CRUD Loc | Read+Update | Read+Report | Read |
-| **Work Orders** | CRUD All | CRUD Org | CRUD | CRUD Assigned | Create | Read |
-| **Schedules** | CRUD All | CRUD Org | CRUD | Read | Read | Read |
-| **Parts** | CRUD All | CRUD Org | CRUD | Update Stock | Read | Read |
-| **Reports** | CRUD All | CRUD Org | CRUD | Read | Read | Read |
-| **Audit Logs** | Read All | Read Org | Read Own | Read Own | — | — |
+| Resource          | Super Admin | Admin    | Manager   | Technician    | Operator    | Viewer    |
+| ----------------- | ----------- | -------- | --------- | ------------- | ----------- | --------- |
+| **Organizations** | CRUD        | Read Own | Read Own  | Read Own      | Read Own    | Read Own  |
+| **Users**         | CRUD All    | CRUD Org | Read Team | Read Self     | Read Self   | Read Self |
+| **Equipment**     | CRUD All    | CRUD Org | CRUD Loc  | Read+Update   | Read+Report | Read      |
+| **Work Orders**   | CRUD All    | CRUD Org | CRUD      | CRUD Assigned | Create      | Read      |
+| **Schedules**     | CRUD All    | CRUD Org | CRUD      | Read          | Read        | Read      |
+| **Parts**         | CRUD All    | CRUD Org | CRUD      | Update Stock  | Read        | Read      |
+| **Reports**       | CRUD All    | CRUD Org | CRUD      | Read          | Read        | Read      |
+| **Audit Logs**    | Read All    | Read Org | Read Own  | Read Own      | —           | —         |
 
 ### Permission Format
 
 Permissions follow the `resource:action` format:
+
 - `equipment:create` - Create new equipment
 - `equipment:read` - View equipment details
 - `equipment:update` - Update equipment information
@@ -566,10 +584,10 @@ The system uses JWT (JSON Web Token) based authentication with access and refres
 
 ### Token Types
 
-| Token | Expiry | Purpose |
-|-------|--------|---------|
-| **Access Token** | 15 minutes | API authorization |
-| **Refresh Token** | 7 days | Obtain new access tokens |
+| Token             | Expiry     | Purpose                  |
+| ----------------- | ---------- | ------------------------ |
+| **Access Token**  | 15 minutes | API authorization        |
+| **Refresh Token** | 7 days     | Obtain new access tokens |
 
 ### Access Token Payload
 
@@ -690,9 +708,12 @@ NEXT_PUBLIC_API_URL=http://localhost:8000/api/v1
 
 ## Team
 
-| Name | Role |
-|------|------|
-| Ansh Chamriya | Developer |
+| Name             | Role      |
+| ---------------- | --------- |
+| Ansh Chamriya    | Developer |
+| Rudra Modi       | Developer |
+| Gautam Prajapati | Developer |
+| Om Raval         | Developer |
 
 ---
 
