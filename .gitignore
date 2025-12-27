@@ -1,0 +1,12 @@
+GearGuard The Ultimate Maintenance Tracker.pdf
+GearGuard_ The Ultimate Maintenance Tracker - 8 hours.png
+.env
+local.db
+local.db-info
+local.db-wal
+local.db-shm
+local_replica.db
+local_replica.db-info
+local_replica.db-wal
+local_replica.db-shm
+__pycache__
