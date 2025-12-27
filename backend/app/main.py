@@ -10,7 +10,7 @@ from fastapi.exceptions import RequestValidationError
 import logging
 import sys
 import uuid
-
+import os
 from app.config import settings
 from app.database import init_database, close_database, get_database, Database
 from app.api.v1.router import api_router
@@ -29,7 +29,7 @@ logging.basicConfig(
 )
 
 logger = logging.getLogger(__name__)
-
+print("Debug log : ",os.environ['DEBUG'])
 
 # ===========================================
 # Super Admin Creation
