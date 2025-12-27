@@ -7,9 +7,11 @@
   --primary-dark: #0f766e;
   --primary-50: #f0fdfa;
   --primary-100: #ccfbf1;
+  --primary-200: #99f6e4;
 
   --background: #ffffff;
   --background-secondary: #f8fafc;
+  --background-tertiary: #f1f5f9;
   --foreground: #0f172a;
   --foreground-muted: #64748b;
   --foreground-subtle: #94a3b8;
@@ -17,6 +19,17 @@
   --border: #e2e8f0;
   --border-light: #f1f5f9;
 
+  /* Status Colors */
+  --success: #10b981;
+  --success-light: #d1fae5;
+  --warning: #f59e0b;
+  --warning-light: #fef3c7;
+  --danger: #ef4444;
+  --danger-light: #fee2e2;
+  --info: #3b82f6;
+  --info-light: #dbeafe;
+
+  /* Shadows */
   --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
   --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.07),
     0 2px 4px -2px rgb(0 0 0 / 0.05);
@@ -24,6 +37,11 @@
     0 4px 6px -4px rgb(0 0 0 / 0.05);
   --shadow-xl: 0 20px 25px -5px rgb(0 0 0 / 0.08),
     0 8px 10px -6px rgb(0 0 0 / 0.04);
+
+  /* Sidebar */
+  --sidebar-width: 260px;
+  --sidebar-collapsed-width: 72px;
+  --topbar-height: 64px;
 }
 
 @theme inline {
@@ -54,7 +72,16 @@ body {
   line-height: 1.6;
 }
 
-/* Smooth animations */
+/* ============ ANIMATIONS ============ */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
 @keyframes fadeInUp {
   from {
     opacity: 0;
@@ -63,6 +90,28 @@ body {
   to {
     opacity: 1;
     transform: translateY(0);
+  }
+}
+
+@keyframes fadeInLeft {
+  from {
+    opacity: 0;
+    transform: translateX(-20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+@keyframes slideIn {
+  from {
+    opacity: 0;
+    transform: translateX(-100%);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
   }
 }
 
@@ -86,8 +135,71 @@ body {
   }
 }
 
+@keyframes pulse-danger {
+  0%,
+  100% {
+    box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.4);
+  }
+  50% {
+    box-shadow: 0 0 12px 3px rgba(239, 68, 68, 0.25);
+  }
+}
+
+@keyframes countUp {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes shimmer {
+  0% {
+    background-position: -200% 0;
+  }
+  100% {
+    background-position: 200% 0;
+  }
+}
+
+@keyframes scaleIn {
+  from {
+    opacity: 0;
+    transform: scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+@keyframes cardHover {
+  from {
+    transform: translateY(0);
+  }
+  to {
+    transform: translateY(-4px);
+  }
+}
+
+/* Animation Classes */
 .animate-fade-in {
-  animation: fadeInUp 0.6s ease-out forwards;
+  animation: fadeIn 0.3s ease-out forwards;
+}
+
+.animate-fade-in-up {
+  animation: fadeInUp 0.5s ease-out forwards;
+}
+
+.animate-fade-in-left {
+  animation: fadeInLeft 0.4s ease-out forwards;
+}
+
+.animate-slide-in {
+  animation: slideIn 0.3s ease-out forwards;
 }
 
 .animate-float {
@@ -98,7 +210,52 @@ body {
   animation: pulse-glow 2s ease-in-out infinite;
 }
 
-/* Utility classes */
+.animate-pulse-danger {
+  animation: pulse-danger 1.5s ease-in-out infinite;
+}
+
+.animate-count-up {
+  animation: countUp 0.6s ease-out forwards;
+}
+
+.animate-scale-in {
+  animation: scaleIn 0.3s ease-out forwards;
+}
+
+/* Staggered animations */
+.stagger-1 {
+  animation-delay: 0.05s;
+}
+.stagger-2 {
+  animation-delay: 0.1s;
+}
+.stagger-3 {
+  animation-delay: 0.15s;
+}
+.stagger-4 {
+  animation-delay: 0.2s;
+}
+.stagger-5 {
+  animation-delay: 0.25s;
+}
+.stagger-6 {
+  animation-delay: 0.3s;
+}
+
+/* ============ SKELETON LOADING ============ */
+.skeleton {
+  background: linear-gradient(
+    90deg,
+    var(--background-tertiary) 25%,
+    var(--border-light) 50%,
+    var(--background-tertiary) 75%
+  );
+  background-size: 200% 100%;
+  animation: shimmer 1.5s infinite;
+  border-radius: 8px;
+}
+
+/* ============ UTILITY CLASSES ============ */
 .gradient-text {
   background: linear-gradient(
     135deg,
@@ -119,7 +276,19 @@ body {
   );
 }
 
-/* Card hover effects */
+/* ============ CARD STYLES ============ */
+.card {
+  background: var(--background);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  box-shadow: var(--shadow-sm);
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.card:hover {
+  box-shadow: var(--shadow-md);
+}
+
 .card-hover {
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
@@ -129,7 +298,37 @@ body {
   box-shadow: var(--shadow-xl);
 }
 
-/* Button styles */
+.card-interactive {
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.card-interactive:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-lg);
+  border-color: var(--primary-100);
+}
+
+.card-interactive:active {
+  transform: translateY(0);
+}
+
+/* ============ BUTTON STYLES ============ */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 10px 16px;
+  font-size: 14px;
+  font-weight: 500;
+  border-radius: 10px;
+  transition: all 0.2s ease;
+  cursor: pointer;
+  border: none;
+  outline: none;
+}
+
 .btn-primary {
   background: linear-gradient(
     135deg,
@@ -137,7 +336,6 @@ body {
     var(--primary-dark) 100%
   );
   color: white;
-  transition: all 0.2s ease;
 }
 
 .btn-primary:hover {
@@ -154,7 +352,6 @@ body {
   background: transparent;
   border: 1.5px solid var(--border);
   color: var(--foreground);
-  transition: all 0.2s ease;
 }
 
 .btn-secondary:hover {
@@ -163,23 +360,445 @@ body {
   background: var(--primary-50);
 }
 
-/* Dashboard mockup styles */
+.btn-ghost {
+  background: transparent;
+  color: var(--foreground-muted);
+}
+
+.btn-ghost:hover {
+  background: var(--background-secondary);
+  color: var(--foreground);
+}
+
+.btn-danger {
+  background: var(--danger);
+  color: white;
+}
+
+.btn-danger:hover {
+  background: #dc2626;
+  box-shadow: 0 4px 12px rgba(239, 68, 68, 0.3);
+}
+
+/* ============ BADGE STYLES ============ */
+.badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 10px;
+  font-size: 12px;
+  font-weight: 500;
+  border-radius: 9999px;
+}
+
+.badge-primary {
+  background: var(--primary-100);
+  color: var(--primary-dark);
+}
+
+.badge-success {
+  background: var(--success-light);
+  color: #047857;
+}
+
+.badge-warning {
+  background: var(--warning-light);
+  color: #b45309;
+}
+
+.badge-danger {
+  background: var(--danger-light);
+  color: #b91c1c;
+}
+
+.badge-info {
+  background: var(--info-light);
+  color: #1d4ed8;
+}
+
+.badge-neutral {
+  background: var(--background-tertiary);
+  color: var(--foreground-muted);
+}
+
+/* ============ STATUS DOT ============ */
+.status-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+}
+
+.status-dot-success {
+  background: var(--success);
+}
+.status-dot-warning {
+  background: var(--warning);
+}
+.status-dot-danger {
+  background: var(--danger);
+}
+.status-dot-info {
+  background: var(--info);
+}
+.status-dot-neutral {
+  background: var(--foreground-subtle);
+}
+
+/* ============ SIDEBAR STYLES ============ */
+.sidebar {
+  width: var(--sidebar-width);
+  min-height: 100vh;
+  background: var(--background);
+  border-right: 1px solid var(--border);
+  transition: width 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  display: flex;
+  flex-direction: column;
+}
+
+.sidebar.collapsed {
+  width: var(--sidebar-collapsed-width);
+}
+
+.sidebar-nav-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 16px;
+  margin: 2px 12px;
+  border-radius: 10px;
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--foreground-muted);
+  transition: all 0.2s ease;
+  cursor: pointer;
+}
+
+.sidebar-nav-item:hover {
+  background: var(--background-secondary);
+  color: var(--foreground);
+}
+
+.sidebar-nav-item.active {
+  background: var(--primary-50);
+  color: var(--primary);
+}
+
+.sidebar-nav-item.active::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  width: 3px;
+  height: 24px;
+  background: var(--primary);
+  border-radius: 0 4px 4px 0;
+}
+
+/* ============ TOPBAR STYLES ============ */
+.topbar {
+  height: var(--topbar-height);
+  background: var(--background);
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  padding: 0 24px;
+  gap: 16px;
+}
+
+/* ============ KPI CARD STYLES ============ */
+.kpi-card {
+  background: var(--background);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  padding: 20px;
+  transition: all 0.2s ease;
+}
+
+.kpi-card:hover {
+  box-shadow: var(--shadow-md);
+  border-color: var(--primary-100);
+}
+
+.kpi-value {
+  font-size: 32px;
+  font-weight: 700;
+  line-height: 1;
+  color: var(--foreground);
+}
+
+.kpi-label {
+  font-size: 13px;
+  color: var(--foreground-muted);
+  margin-top: 4px;
+}
+
+.kpi-trend {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 12px;
+  font-weight: 500;
+  padding: 2px 8px;
+  border-radius: 9999px;
+}
+
+.kpi-trend-up {
+  background: var(--success-light);
+  color: #047857;
+}
+
+.kpi-trend-down {
+  background: var(--danger-light);
+  color: #b91c1c;
+}
+
+/* ============ KANBAN STYLES ============ */
+.kanban-column {
+  background: var(--background-secondary);
+  border-radius: 12px;
+  min-width: 300px;
+  max-width: 340px;
+}
+
+.kanban-card {
+  background: var(--background);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 14px;
+  margin-bottom: 10px;
+  cursor: grab;
+  transition: all 0.2s ease;
+}
+
+.kanban-card:hover {
+  box-shadow: var(--shadow-md);
+  border-color: var(--primary-100);
+}
+
+.kanban-card:active {
+  cursor: grabbing;
+  box-shadow: var(--shadow-lg);
+  transform: rotate(2deg);
+}
+
+.kanban-card.overdue {
+  border-left: 3px solid var(--danger);
+}
+
+/* ============ AVATAR STYLES ============ */
+.avatar {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  font-weight: 600;
+  background: var(--primary-100);
+  color: var(--primary-dark);
+}
+
+.avatar-sm {
+  width: 28px;
+  height: 28px;
+  font-size: 11px;
+}
+.avatar-md {
+  width: 36px;
+  height: 36px;
+  font-size: 13px;
+}
+.avatar-lg {
+  width: 44px;
+  height: 44px;
+  font-size: 15px;
+}
+
+.avatar-group {
+  display: flex;
+}
+
+.avatar-group .avatar {
+  margin-left: -8px;
+  border: 2px solid var(--background);
+}
+
+.avatar-group .avatar:first-child {
+  margin-left: 0;
+}
+
+/* ============ CALENDAR STYLES ============ */
+.calendar-day {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 8px;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.calendar-day:hover {
+  background: var(--background-secondary);
+}
+
+.calendar-day.today {
+  background: var(--primary);
+  color: white;
+}
+
+.calendar-day.has-event::after {
+  content: "";
+  width: 6px;
+  height: 6px;
+  background: var(--primary);
+  border-radius: 50%;
+  margin-top: 4px;
+}
+
+.calendar-day.today.has-event::after {
+  background: white;
+}
+
+/* ============ FORM STYLES ============ */
+.input {
+  width: 100%;
+  height: 44px;
+  padding: 0 14px;
+  font-size: 14px;
+  background: var(--background);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  color: var(--foreground);
+  transition: all 0.2s ease;
+}
+
+.input:focus {
+  outline: none;
+  border-color: var(--primary);
+  box-shadow: 0 0 0 3px var(--primary-100);
+}
+
+.input::placeholder {
+  color: var(--foreground-subtle);
+}
+
+/* ============ TABLE STYLES ============ */
+.table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.table th {
+  text-align: left;
+  padding: 12px 16px;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--foreground-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  background: var(--background-secondary);
+  border-bottom: 1px solid var(--border);
+}
+
+.table td {
+  padding: 14px 16px;
+  font-size: 14px;
+  color: var(--foreground);
+  border-bottom: 1px solid var(--border-light);
+}
+
+.table tr {
+  transition: background 0.15s ease;
+}
+
+.table tbody tr:hover {
+  background: var(--background-secondary);
+}
+
+/* ============ SCROLLBAR STYLES ============ */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--border);
+  border-radius: 3px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--foreground-subtle);
+}
+
+/* ============ DASHBOARD MOCKUP ============ */
 .mockup-shadow {
   box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.15),
     0 0 0 1px rgba(0, 0, 0, 0.05);
 }
 
-/* Step connector line */
-.step-connector::after {
-  content: "";
+/* ============ NOTIFICATION DOT ============ */
+.notification-dot {
   position: absolute;
-  top: 50%;
-  right: -100%;
-  width: 100%;
-  height: 2px;
+  top: -2px;
+  right: -2px;
+  width: 18px;
+  height: 18px;
+  background: var(--danger);
+  color: white;
+  font-size: 10px;
+  font-weight: 600;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 2px solid var(--background);
+}
+
+/* ============ PROGRESS BAR ============ */
+.progress-bar {
+  height: 6px;
+  background: var(--background-tertiary);
+  border-radius: 3px;
+  overflow: hidden;
+}
+
+.progress-bar-fill {
+  height: 100%;
   background: linear-gradient(
     90deg,
-    var(--primary-100) 0%,
-    var(--primary) 100%
+    var(--primary) 0%,
+    var(--primary-light) 100%
   );
+  border-radius: 3px;
+  transition: width 0.5s ease;
+}
+
+/* ============ TOOLTIP ============ */
+.tooltip {
+  position: relative;
+}
+
+.tooltip::after {
+  content: attr(data-tooltip);
+  position: absolute;
+  bottom: 100%;
+  left: 50%;
+  transform: translateX(-50%) translateY(-4px);
+  padding: 6px 12px;
+  background: var(--foreground);
+  color: var(--background);
+  font-size: 12px;
+  border-radius: 6px;
+  white-space: nowrap;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.2s ease, transform 0.2s ease;
+}
+
+.tooltip:hover::after {
+  opacity: 1;
+  transform: translateX(-50%) translateY(-8px);
 }

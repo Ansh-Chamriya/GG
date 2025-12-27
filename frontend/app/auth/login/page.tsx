@@ -3,64 +3,99 @@
 import { useState } from "react";
 import type { ChangeEvent, FormEvent } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
-import { EyeIcon, EyeSlashIcon } from "@heroicons/react/24/outline";
-
-type Status =
-    | { type: "success"; message: string }
-    | { type: "error"; message: string }
-    | null;
+import { useSearchParams } from "next/navigation";
+import { useAuth } from "@/app/lib/auth";
+import { Shield, Loader2, CheckCircle2 } from "lucide-react";
 
 export default function LoginPage() {
-    const router = useRouter();
-    const [formData, setFormData] = useState({ email: "", password: "" });
-    const [errors, setErrors] = useState({ email: "", password: "" });
-    const [status, setStatus] = useState<Status>(null);
-    const [loading, setLoading] = useState(false);
-    const [showPassword, setShowPassword] = useState(false);
+    const { login, isLoading: authLoading } = useAuth();
+    const searchParams = useSearchParams();
+    const justRegistered = searchParams.get("registered") === "true";
 
-    const validateEmail = (email: string) => {
-        if (!email) return "Email is required";
-        if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email))
-            return "Invalid email address";
-        return "";
-    };
+    const [formData, setFormData] = useState({
+        email: "",
+        password: "",
+    });
+
+    const [errors, setErrors] = useState({
+        email: "",
+        password: "",
+        general: "",
+    });
+
+    const [isSubmitting, setIsSubmitting] = useState(false);
 
     const handleChange = (e: ChangeEvent<HTMLInputElement>) => {
         const { name, value } = e.target;
         setFormData((p) => ({ ...p, [name]: value }));
-        setErrors((p) => ({ ...p, [name]: "" }));
+        setErrors((p) => ({ ...p, [name]: "", general: "" }));
+    };
+
+    const validateForm = (): boolean => {
+        const newErrors = { email: "", password: "", general: "" };
+        let isValid = true;
+
+        if (!formData.email) {
+            newErrors.email = "Email is required";
+            isValid = false;
+        } else if (!/\S+@\S+\.\S+/.test(formData.email)) {
+            newErrors.email = "Please enter a valid email";
+            isValid = false;
+        }
+
+        if (!formData.password) {
+            newErrors.password = "Password is required";
+            isValid = false;
+        }
+
+        setErrors(newErrors);
+        return isValid;
     };
 
     const handleSubmit = async (e: FormEvent) => {
         e.preventDefault();
-        setStatus(null);
 
-        const emailError = validateEmail(formData.email);
-        const passwordError = !formData.password ? "Password is required" : "";
+        if (!validateForm()) return;
 
-        if (emailError || passwordError) {
-            setErrors({ email: emailError, password: passwordError });
-            return;
+        setIsSubmitting(true);
+        setErrors((p) => ({ ...p, general: "" }));
+
+        try {
+            await login({
+                email: formData.email,
+                password: formData.password,
+            });
+            // Redirect is handled by AuthContext based on user role
+        } catch (error) {
+            setErrors((p) => ({
+                ...p,
+                general:
+                    error instanceof Error
+                        ? error.message
+                        : "Login failed. Please try again.",
+            }));
+        } finally {
+            setIsSubmitting(false);
         }
-
-        setLoading(true);
-        await new Promise((r) => setTimeout(r, 1500));
-        setLoading(false);
-
-        setStatus({
-            type: "success",
-            message: "Login successful! Redirecting...",
-        });
-
-        // Redirect to dashboard
-        setTimeout(() => {
-            router.push("/work-orders");
-        }, 1000);
     };
+
+    const isLoading = isSubmitting || authLoading;
 
     return (
         <>
+            {/* Logo */}
+            <div className="flex justify-center mb-8">
+                <div
+                    className="w-14 h-14 rounded-2xl flex items-center justify-center"
+                    style={{
+                        background:
+                            "linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%)",
+                    }}
+                >
+                    <Shield className="w-8 h-8 text-white" />
+                </div>
+            </div>
+
             {/* Header */}
             <div className="space-y-2 text-center">
                 <h1
@@ -69,16 +104,41 @@ export default function LoginPage() {
                 >
                     Welcome back
                 </h1>
-                <p
-                    className="text-sm"
-                    style={{ color: "var(--foreground-muted)" }}
-                >
-                    Access your GearGuard workspace
+                <p className="text-sm" style={{ color: "var(--foreground-muted)" }}>
+                    Sign in to your GearGuard account
                 </p>
             </div>
 
+            {/* Success Message */}
+            {justRegistered && (
+                <div
+                    className="flex items-center gap-3 p-4 rounded-xl mt-4"
+                    style={{ background: "var(--success-light)" }}
+                >
+                    <CheckCircle2
+                        className="w-5 h-5 flex-shrink-0"
+                        style={{ color: "var(--success)" }}
+                    />
+                    <p className="text-sm" style={{ color: "var(--success)" }}>
+                        Account created successfully! Please sign in.
+                    </p>
+                </div>
+            )}
+
+            {/* Error Message */}
+            {errors.general && (
+                <div
+                    className="p-4 rounded-xl mt-4"
+                    style={{ background: "var(--danger-light)" }}
+                >
+                    <p className="text-sm" style={{ color: "var(--danger)" }}>
+                        {errors.general}
+                    </p>
+                </div>
+            )}
+
             {/* Form */}
-            <form onSubmit={handleSubmit} className="space-y-4">
+            <form onSubmit={handleSubmit} className="space-y-4 mt-6">
                 {/* Email */}
                 <div className="space-y-1.5">
                     <label
@@ -89,109 +149,102 @@ export default function LoginPage() {
                     </label>
                     <input
                         name="email"
+                        type="email"
                         value={formData.email}
                         onChange={handleChange}
-                        className="h-11 w-full rounded-lg px-3 text-sm outline-none bg-transparent"
+                        disabled={isLoading}
+                        className="h-11 w-full rounded-lg px-3 text-sm outline-none bg-transparent disabled:opacity-50"
                         style={{
-                            border: "1px solid var(--border)",
+                            border: errors.email
+                                ? "1px solid var(--danger)"
+                                : "1px solid var(--border)",
                             color: "var(--foreground)",
                         }}
+                        placeholder="you@company.com"
                         onFocus={(e) =>
-                        (e.currentTarget.style.boxShadow =
-                            "0 0 0 2px var(--primary-100)")
+                            (e.currentTarget.style.boxShadow = "0 0 0 2px var(--primary-100)")
                         }
                         onBlur={(e) => (e.currentTarget.style.boxShadow = "none")}
                     />
                     {errors.email && (
-                        <p className="text-xs text-red-500">{errors.email}</p>
+                        <p className="text-xs" style={{ color: "var(--danger)" }}>
+                            {errors.email}
+                        </p>
                     )}
                 </div>
 
                 {/* Password */}
                 <div className="space-y-1.5">
-                    <label
-                        className="text-sm font-medium"
-                        style={{ color: "var(--foreground)" }}
-                    >
-                        Password
-                    </label>
-                    <div className="relative">
-                        <input
-                            name="password"
-                            type={showPassword ? "text" : "password"}
-                            value={formData.password}
-                            onChange={handleChange}
-                            className="h-11 w-full rounded-lg px-3 pr-10 text-sm outline-none bg-transparent"
-                            style={{
-                                border: "1px solid var(--border)",
-                                color: "var(--foreground)",
-                            }}
-                            onFocus={(e) =>
-                            (e.currentTarget.style.boxShadow =
-                                "0 0 0 2px var(--primary-100)")
-                            }
-                            onBlur={(e) => (e.currentTarget.style.boxShadow = "none")}
-                        />
-                        <button
-                            type="button"
-                            onClick={() => setShowPassword(!showPassword)}
-                            className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                    <div className="flex items-center justify-between">
+                        <label
+                            className="text-sm font-medium"
+                            style={{ color: "var(--foreground)" }}
                         >
-                            {showPassword ? (
-                                <EyeSlashIcon className="h-4 w-4" />
-                            ) : (
-                                <EyeIcon className="h-4 w-4" />
-                            )}
-                        </button>
+                            Password
+                        </label>
+                        <Link
+                            href="/auth/forgot-password"
+                            className="text-sm hover:underline"
+                            style={{ color: "var(--primary)" }}
+                        >
+                            Forgot password?
+                        </Link>
                     </div>
+                    <input
+                        name="password"
+                        type="password"
+                        value={formData.password}
+                        onChange={handleChange}
+                        disabled={isLoading}
+                        className="h-11 w-full rounded-lg px-3 text-sm outline-none bg-transparent disabled:opacity-50"
+                        style={{
+                            border: errors.password
+                                ? "1px solid var(--danger)"
+                                : "1px solid var(--border)",
+                            color: "var(--foreground)",
+                        }}
+                        placeholder="••••••••"
+                        onFocus={(e) =>
+                            (e.currentTarget.style.boxShadow = "0 0 0 2px var(--primary-100)")
+                        }
+                        onBlur={(e) => (e.currentTarget.style.boxShadow = "none")}
+                    />
                     {errors.password && (
-                        <p className="text-xs text-red-500">{errors.password}</p>
+                        <p className="text-xs" style={{ color: "var(--danger)" }}>
+                            {errors.password}
+                        </p>
                     )}
                 </div>
 
-                {/* Status */}
-                {status && (
-                    <div
-                        className="rounded-lg p-3 text-sm"
-                        style={
-                            status.type === "success"
-                                ? {
-                                    backgroundColor: "var(--primary-50)",
-                                    color: "var(--primary)",
-                                    border: "1px solid var(--primary-100)",
-                                }
-                                : {
-                                    backgroundColor: "#fee2e2",
-                                    color: "#b91c1c",
-                                }
-                        }
-                    >
-                        {status.message}
-                    </div>
-                )}
-
-                {/* Button */}
+                {/* Submit Button */}
                 <button
                     type="submit"
-                    disabled={loading}
-                    className="w-full rounded-xl py-2.5 font-medium transition-all disabled:opacity-50"
+                    disabled={isLoading}
+                    className="w-full rounded-xl py-3 font-medium transition-all disabled:opacity-50 flex items-center justify-center gap-2"
                     style={{
                         background:
                             "linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%)",
                         color: "white",
                     }}
                 >
-                    {loading ? "Signing in…" : "Sign In"}
+                    {isLoading ? (
+                        <>
+                            <Loader2 className="w-4 h-4 animate-spin" />
+                            Signing in...
+                        </>
+                    ) : (
+                        "Sign in"
+                    )}
                 </button>
             </form>
 
             {/* Footer */}
-            <div className="text-center text-sm">
+            <div className="text-center text-sm mt-6">
                 <span style={{ color: "var(--foreground-muted)" }}>
                     Don&apos;t have an account?{" "}
                 </span>
                 <Link
-                    href="/auth/signup"
+                    href="/auth/sign-up"
                     className="font-semibold hover:underline"
                     style={{ color: "var(--primary)" }}
                 >
