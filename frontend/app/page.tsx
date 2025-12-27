@@ -19,6 +19,7 @@ import {
   Shield,
   ArrowRight,
 } from "lucide-react";
+import Link from "next/link";
 
 // ============ ICON COMPONENTS ============
 function IconWrapper({
@@ -132,14 +133,20 @@ function HeroSection() {
               teams, and repair workflows in one place.
             </p>
             <div className="flex flex-wrap gap-4">
-              <button className="btn-primary px-6 py-3 rounded-xl font-medium flex items-center gap-2 animate-pulse-glow">
+              <Link
+                href="/auth/sign-up"
+                className="btn-primary px-6 py-3 rounded-xl font-medium flex items-center gap-2 animate-pulse-glow"
+              >
                 Get Started
                 <ArrowRight className="w-4 h-4" />
-              </button>
-              <button className="btn-secondary px-6 py-3 rounded-xl font-medium flex items-center gap-2">
+              </Link>
+              <Link
+                href="#"
+                className="btn-secondary px-6 py-3 rounded-xl font-medium flex items-center gap-2"
+              >
                 View Demo
                 <ChevronRight className="w-4 h-4" />
-              </button>
+              </Link>
             </div>
             <div
               className="flex items-center gap-6 mt-10 pt-8"
@@ -1063,12 +1070,6 @@ function CTASection() {
           Start Using GearGuard
           <ArrowRight className="w-5 h-5" />
         </button>
-        <p
-          className="text-sm mt-4"
-          style={{ color: "var(--foreground-subtle)" }}
-        >
-          No credit card required • Free 14-day trial
-        </p>
       </div>
     </section>
   );
