@@ -1,12 +1,12 @@
 {
     "version": 2,
-    "installCommand": "pip install -r backend/requirements.txt",
     "builds": [
         {
             "src": "backend/app/main.py",
             "use": "@vercel/python",
             "config": {
-                "runtime": "python3.11"
+                "runtime": "python3.11",
+                "maxLambdaSize": "50mb"
             }
         }
     ],
@@ -16,6 +16,11 @@
             "dest": "backend/app/main.py"
         }
     ],
+    "build": {
+        "env": {
+            "PYTHONPATH": "backend"
+        }
+    },
     "env": {
         "PYTHONPATH": "backend"
     }
