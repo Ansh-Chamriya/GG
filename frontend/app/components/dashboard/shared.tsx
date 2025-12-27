@@ -4,7 +4,7 @@ import React, { useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useAuth } from "@/app/lib/auth";
-import { UserRole } from "@/app/lib/api";
+import { UserRole, ROLE_LABELS } from "@/app/lib/api";
 import {
   Shield,
   LayoutDashboard,
@@ -27,6 +27,8 @@ import {
   FileText,
   Database,
   AlertTriangle,
+  Package,
+  Eye,
 } from "lucide-react";
 
 // ============ TYPES ============
@@ -49,8 +51,9 @@ interface TopbarProps {
 }
 
 // ============ NAVIGATION CONFIG ============
+// Updated to match backend role names (snake_case)
 const navigationConfig: Record<UserRole, NavItem[]> = {
-  "super-admin": [
+  super_admin: [
     {
       label: "Dashboard",
       href: "/dashboard/super-admin",
@@ -67,8 +70,8 @@ const navigationConfig: Record<UserRole, NavItem[]> = {
       icon: <Settings className="w-5 h-5" />,
     },
     {
-      label: "All Requests",
-      href: "/dashboard/super-admin/requests",
+      label: "All Work Orders",
+      href: "/dashboard/super-admin/workorders",
       icon: <ClipboardList className="w-5 h-5" />,
     },
     {
@@ -104,19 +107,24 @@ const navigationConfig: Record<UserRole, NavItem[]> = {
       icon: <Settings className="w-5 h-5" />,
     },
     {
+      label: "Work Orders",
+      href: "/dashboard/admin/workorders",
+      icon: <ClipboardList className="w-5 h-5" />,
+    },
+    {
+      label: "Schedules",
+      href: "/dashboard/admin/schedules",
+      icon: <Calendar className="w-5 h-5" />,
+    },
+    {
       label: "Teams",
       href: "/dashboard/admin/teams",
       icon: <Users className="w-5 h-5" />,
     },
     {
-      label: "Requests",
-      href: "/dashboard/admin/requests",
-      icon: <ClipboardList className="w-5 h-5" />,
-    },
-    {
-      label: "Calendar",
-      href: "/dashboard/admin/calendar",
-      icon: <Calendar className="w-5 h-5" />,
+      label: "Parts Inventory",
+      href: "/dashboard/admin/parts",
+      icon: <Package className="w-5 h-5" />,
     },
     {
       label: "Reports",
@@ -156,6 +164,11 @@ const navigationConfig: Record<UserRole, NavItem[]> = {
       icon: <Users className="w-5 h-5" />,
     },
     {
+      label: "Parts",
+      href: "/dashboard/manager/parts",
+      icon: <Package className="w-5 h-5" />,
+    },
+    {
       label: "Reports",
       href: "/dashboard/manager/reports",
       icon: <BarChart3 className="w-5 h-5" />,
@@ -178,32 +191,76 @@ const navigationConfig: Record<UserRole, NavItem[]> = {
       icon: <Calendar className="w-5 h-5" />,
     },
     {
+      label: "Equipment",
+      href: "/dashboard/technician/equipment",
+      icon: <Settings className="w-5 h-5" />,
+    },
+    {
       label: "History",
       href: "/dashboard/technician/history",
       icon: <Clock className="w-5 h-5" />,
     },
   ],
-};
-
-const roleLabels: Record<UserRole, string> = {
-  "super-admin": "Super Admin",
-  admin: "Organization Admin",
-  manager: "Manager",
-  technician: "Technician",
+  operator: [
+    {
+      label: "Dashboard",
+      href: "/dashboard/operator",
+      icon: <LayoutDashboard className="w-5 h-5" />,
+    },
+    {
+      label: "Equipment",
+      href: "/dashboard/operator/equipment",
+      icon: <Settings className="w-5 h-5" />,
+    },
+    {
+      label: "Report Issue",
+      href: "/dashboard/operator/report-issue",
+      icon: <AlertTriangle className="w-5 h-5" />,
+    },
+    {
+      label: "My Requests",
+      href: "/dashboard/operator/requests",
+      icon: <ClipboardList className="w-5 h-5" />,
+    },
+  ],
+  viewer: [
+    {
+      label: "Dashboard",
+      href: "/dashboard/viewer",
+      icon: <LayoutDashboard className="w-5 h-5" />,
+    },
+    {
+      label: "Equipment",
+      href: "/dashboard/viewer/equipment",
+      icon: <Eye className="w-5 h-5" />,
+    },
+    {
+      label: "Work Orders",
+      href: "/dashboard/viewer/workorders",
+      icon: <ClipboardList className="w-5 h-5" />,
+    },
+    {
+      label: "Reports",
+      href: "/dashboard/viewer/reports",
+      icon: <BarChart3 className="w-5 h-5" />,
+    },
+  ],
 };
 
 const roleColors: Record<UserRole, string> = {
-  "super-admin": "var(--danger)",
+  super_admin: "var(--danger)",
   admin: "var(--warning)",
   manager: "var(--primary)",
   technician: "var(--success)",
+  operator: "var(--info)",
+  viewer: "var(--foreground-muted)",
 };
 
 // ============ SIDEBAR COMPONENT ============
 export function Sidebar({ role, collapsed = false, onToggle }: SidebarProps) {
   const pathname = usePathname();
   const { logout } = useAuth();
-  const navItems = navigationConfig[role];
+  const navItems = navigationConfig[role] || [];
 
   const handleLogout = async () => {
     await logout();
@@ -226,7 +283,7 @@ export function Sidebar({ role, collapsed = false, onToggle }: SidebarProps) {
         style={{ borderColor: "var(--border)" }}
       >
         <div
-          className="w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0"
+          className="w-9 h-9 rounded-xl flex items-center justify-center shrink-0"
           style={{
             background:
               "linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%)",
@@ -246,7 +303,7 @@ export function Sidebar({ role, collapsed = false, onToggle }: SidebarProps) {
               className="text-xs"
               style={{ color: "var(--foreground-muted)" }}
             >
-              {roleLabels[role]}
+              {ROLE_LABELS[role]}
             </div>
           </div>
         )}
@@ -255,7 +312,8 @@ export function Sidebar({ role, collapsed = false, onToggle }: SidebarProps) {
       {/* Navigation */}
       <nav className="flex-1 py-4 overflow-y-auto">
         {navItems.map((item, index) => {
-          const isActive = pathname === item.href;
+          const isActive =
+            pathname === item.href || pathname.startsWith(item.href + "/");
           return (
             <Link
               key={item.href}
@@ -266,7 +324,7 @@ export function Sidebar({ role, collapsed = false, onToggle }: SidebarProps) {
               style={{ animationDelay: `${index * 0.05}s` }}
             >
               <span
-                className="flex-shrink-0"
+                className="shrink-0"
                 style={{ color: isActive ? "var(--primary)" : "inherit" }}
               >
                 {item.icon}
@@ -328,11 +386,16 @@ export function Sidebar({ role, collapsed = false, onToggle }: SidebarProps) {
 
 // ============ TOPBAR COMPONENT ============
 export function Topbar({ title, notificationCount = 0 }: TopbarProps) {
-  const { user, logout } = useAuth();
+  const { user, logout, getUserDisplayName } = useAuth();
   const [showUserMenu, setShowUserMenu] = useState(false);
 
-  const role = user?.role || "technician";
-  const userName = user?.fullName || "User";
+  const role = user?.role || "viewer";
+  const userName = getUserDisplayName();
+  const userInitials = user
+    ? `${user.first_name?.[0] || ""}${
+        user.last_name?.[0] || ""
+      }`.toUpperCase() || user.email[0].toUpperCase()
+    : "U";
 
   const handleLogout = async () => {
     setShowUserMenu(false);
@@ -362,7 +425,7 @@ export function Topbar({ title, notificationCount = 0 }: TopbarProps) {
         />
         <input
           type="text"
-          placeholder="Search equipment, requests..."
+          placeholder="Search equipment, work orders..."
           className="bg-transparent border-none outline-none text-sm w-64"
           style={{ color: "var(--foreground)" }}
         />
@@ -389,10 +452,7 @@ export function Topbar({ title, notificationCount = 0 }: TopbarProps) {
             className="w-9 h-9 rounded-full flex items-center justify-center text-sm font-semibold"
             style={{ background: roleColors[role], color: "white" }}
           >
-            {userName
-              .split(" ")
-              .map((n) => n[0])
-              .join("")}
+            {userInitials}
           </div>
           <div className="hidden md:block text-left">
             <div
@@ -405,7 +465,7 @@ export function Topbar({ title, notificationCount = 0 }: TopbarProps) {
               className="text-xs"
               style={{ color: "var(--foreground-muted)" }}
             >
-              {roleLabels[role]}
+              {ROLE_LABELS[role]}
             </div>
           </div>
           <ChevronDown
@@ -592,29 +652,32 @@ export function SectionHeader({ title, subtitle, action }: SectionHeaderProps) {
 
 // ============ STATUS BADGE ============
 type StatusType =
-  | "new"
-  | "in-progress"
-  | "repaired"
-  | "scrap"
-  | "scheduled"
+  | "pending"
+  | "in_progress"
+  | "on_hold"
+  | "completed"
+  | "cancelled"
   | "overdue";
 
 const statusConfig: Record<StatusType, { label: string; className: string }> = {
-  new: { label: "New", className: "badge-info" },
-  "in-progress": { label: "In Progress", className: "badge-warning" },
-  repaired: { label: "Repaired", className: "badge-success" },
-  scrap: { label: "Scrap", className: "badge-neutral" },
-  scheduled: { label: "Scheduled", className: "badge-primary" },
+  pending: { label: "Pending", className: "badge-info" },
+  in_progress: { label: "In Progress", className: "badge-warning" },
+  on_hold: { label: "On Hold", className: "badge-neutral" },
+  completed: { label: "Completed", className: "badge-success" },
+  cancelled: { label: "Cancelled", className: "badge-neutral" },
   overdue: { label: "Overdue", className: "badge-danger" },
 };
 
 export function StatusBadge({ status }: { status: StatusType }) {
-  const config = statusConfig[status];
+  const config = statusConfig[status] || {
+    label: status,
+    className: "badge-neutral",
+  };
   return <span className={`badge ${config.className}`}>{config.label}</span>;
 }
 
 // ============ PRIORITY BADGE ============
-type PriorityType = "low" | "medium" | "high" | "urgent";
+type PriorityType = "low" | "medium" | "high" | "critical";
 
 const priorityConfig: Record<
   PriorityType,
@@ -623,11 +686,43 @@ const priorityConfig: Record<
   low: { label: "Low", className: "badge-neutral" },
   medium: { label: "Medium", className: "badge-info" },
   high: { label: "High", className: "badge-warning" },
-  urgent: { label: "Urgent", className: "badge-danger" },
+  critical: { label: "Critical", className: "badge-danger" },
 };
 
 export function PriorityBadge({ priority }: { priority: PriorityType }) {
-  const config = priorityConfig[priority];
+  const config = priorityConfig[priority] || {
+    label: priority,
+    className: "badge-neutral",
+  };
+  return <span className={`badge ${config.className}`}>{config.label}</span>;
+}
+
+// ============ EQUIPMENT STATUS BADGE ============
+type EquipmentStatusType =
+  | "operational"
+  | "maintenance"
+  | "breakdown"
+  | "retired";
+
+const equipmentStatusConfig: Record<
+  EquipmentStatusType,
+  { label: string; className: string }
+> = {
+  operational: { label: "Operational", className: "badge-success" },
+  maintenance: { label: "Maintenance", className: "badge-warning" },
+  breakdown: { label: "Breakdown", className: "badge-danger" },
+  retired: { label: "Retired", className: "badge-neutral" },
+};
+
+export function EquipmentStatusBadge({
+  status,
+}: {
+  status: EquipmentStatusType;
+}) {
+  const config = equipmentStatusConfig[status] || {
+    label: status,
+    className: "badge-neutral",
+  };
   return <span className={`badge ${config.className}`}>{config.label}</span>;
 }
 
@@ -744,6 +839,7 @@ interface ProgressBarProps {
   max?: number;
   label?: string;
   showValue?: boolean;
+  color?: string;
 }
 
 export function ProgressBar({
@@ -751,6 +847,7 @@ export function ProgressBar({
   max = 100,
   label,
   showValue = true,
+  color,
 }: ProgressBarProps) {
   const percentage = Math.min((value / max) * 100, 100);
 
@@ -769,9 +866,45 @@ export function ProgressBar({
       <div className="progress-bar">
         <div
           className="progress-bar-fill"
-          style={{ width: `${percentage}%` }}
+          style={{
+            width: `${percentage}%`,
+            background: color || undefined,
+          }}
         />
       </div>
+    </div>
+  );
+}
+
+// ============ HEALTH SCORE ============
+interface HealthScoreProps {
+  score: number;
+  size?: "sm" | "md" | "lg";
+}
+
+export function HealthScore({ score, size = "md" }: HealthScoreProps) {
+  const getColor = (s: number) => {
+    if (s >= 80) return "var(--success)";
+    if (s >= 60) return "var(--warning)";
+    if (s >= 40) return "var(--warning)";
+    return "var(--danger)";
+  };
+
+  const sizeClasses = {
+    sm: "w-8 h-8 text-xs",
+    md: "w-12 h-12 text-sm",
+    lg: "w-16 h-16 text-lg",
+  };
+
+  return (
+    <div
+      className={`${sizeClasses[size]} rounded-full flex items-center justify-center font-bold`}
+      style={{
+        background: `${getColor(score)}20`,
+        color: getColor(score),
+      }}
+    >
+      {score}
     </div>
   );
 }
@@ -804,13 +937,94 @@ export function OverdueIndicator({ count }: { count: number }) {
 
   return (
     <div
-      className="flex items-center gap-2 px-3 py-2 rounded-lg animate-pulse-danger"
+      className="flex items-center gap-2 px-4 py-3 rounded-xl animate-pulse-danger"
       style={{ background: "var(--danger-light)" }}
     >
-      <AlertTriangle className="w-4 h-4" style={{ color: "var(--danger)" }} />
+      <AlertTriangle className="w-5 h-5" style={{ color: "var(--danger)" }} />
       <span className="text-sm font-medium" style={{ color: "var(--danger)" }}>
-        {count} overdue request{count > 1 ? "s" : ""}
+        {count} overdue work order{count > 1 ? "s" : ""} require attention
       </span>
+    </div>
+  );
+}
+
+// ============ DATA TABLE ============
+interface Column<T> {
+  key: keyof T | string;
+  header: string;
+  render?: (item: T) => React.ReactNode;
+  width?: string;
+}
+
+interface DataTableProps<T> {
+  data: T[];
+  columns: Column<T>[];
+  onRowClick?: (item: T) => void;
+  isLoading?: boolean;
+  emptyMessage?: string;
+}
+
+export function DataTable<T extends { id: string }>({
+  data,
+  columns,
+  onRowClick,
+  isLoading,
+  emptyMessage = "No data available",
+}: DataTableProps<T>) {
+  if (isLoading) {
+    return <SkeletonTable rows={5} />;
+  }
+
+  if (data.length === 0) {
+    return (
+      <div className="card p-8">
+        <EmptyState
+          icon={<ClipboardList className="w-8 h-8" />}
+          title={emptyMessage}
+        />
+      </div>
+    );
+  }
+
+  return (
+    <div className="card overflow-hidden">
+      <div className="overflow-x-auto">
+        <table className="table">
+          <thead>
+            <tr>
+              {columns.map((col) => (
+                <th key={String(col.key)} style={{ width: col.width }}>
+                  {col.header}
+                </th>
+              ))}
+            </tr>
+          </thead>
+          <tbody>
+            {data.map((item, index) => (
+              <tr
+                key={item.id}
+                onClick={() => onRowClick?.(item)}
+                className={`animate-fade-in ${
+                  onRowClick ? "cursor-pointer hover:bg-gray-50" : ""
+                }`}
+                style={{ animationDelay: `${index * 0.05}s` }}
+              >
+                {columns.map((col) => (
+                  <td key={String(col.key)}>
+                    {col.render
+                      ? col.render(item)
+                      : String(
+                          (item as Record<string, unknown>)[
+                            col.key as string
+                          ] || "-"
+                        )}
+                  </td>
+                ))}
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
     </div>
   );
 }

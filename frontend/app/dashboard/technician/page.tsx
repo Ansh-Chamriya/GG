@@ -32,8 +32,8 @@ import {
 } from "lucide-react";
 
 // ============ TYPES ============
-type TaskStatus = "pending" | "in-progress" | "completed";
-type Priority = "low" | "medium" | "high" | "urgent";
+type TaskStatus = "pending" | "in_progress" | "completed";
+type Priority = "low" | "medium" | "high" | "critical";
 
 interface Task {
   id: string;
@@ -84,7 +84,7 @@ const todaysTasks: Task[] = [
     equipment: "CNC Machine #5",
     location: "Manufacturing Floor 2",
     priority: "high",
-    status: "in-progress",
+    status: "in_progress",
     dueTime: "11:00 AM",
     duration: "02:15:34",
     description:
@@ -207,7 +207,7 @@ function TaskCard({
           </span>
           <PriorityBadge priority={task.priority} />
         </div>
-        {task.status === "in-progress" && (
+        {task.status === "in_progress" && (
           <div
             className="flex items-center gap-1.5 px-2 py-1 rounded-full animate-pulse"
             style={{ background: "var(--warning-light)" }}
@@ -280,7 +280,7 @@ function TaskCard({
             </span>
           </div>
         )}
-        {task.duration && task.status === "in-progress" && (
+        {task.duration && task.status === "in_progress" && (
           <div
             className="flex items-center gap-1.5 px-2 py-1 rounded-lg"
             style={{ background: "var(--background-secondary)" }}
@@ -614,7 +614,7 @@ function TechnicianCalendar() {
 // ============ MAIN PAGE ============
 export default function TechnicianDashboard() {
   const [selectedTask, setSelectedTask] = useState<Task | null>(
-    todaysTasks.find((t) => t.status === "in-progress") || null
+    todaysTasks.find((t) => t.status === "in_progress") || null
   );
 
   return (

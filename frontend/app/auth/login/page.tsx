@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import type { ChangeEvent, FormEvent } from "react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
@@ -15,6 +15,7 @@ export default function LoginPage() {
   const [formData, setFormData] = useState({
     email: "",
     password: "",
+    rememberMe: false,
   });
 
   const [errors, setErrors] = useState({
@@ -24,10 +25,23 @@ export default function LoginPage() {
   });
 
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [showSuccess, setShowSuccess] = useState(false);
+
+  // Show success message if just registered
+  useEffect(() => {
+    if (justRegistered) {
+      setShowSuccess(true);
+      const timer = setTimeout(() => setShowSuccess(false), 5000);
+      return () => clearTimeout(timer);
+    }
+  }, [justRegistered]);
 
   const handleChange = (e: ChangeEvent<HTMLInputElement>) => {
-    const { name, value } = e.target;
-    setFormData((p) => ({ ...p, [name]: value }));
+    const { name, value, type, checked } = e.target;
+    setFormData((p) => ({
+      ...p,
+      [name]: type === "checkbox" ? checked : value,
+    }));
     setErrors((p) => ({ ...p, [name]: "", general: "" }));
   };
 
@@ -72,7 +86,7 @@ export default function LoginPage() {
         general:
           error instanceof Error
             ? error.message
-            : "Login failed. Please try again.",
+            : "Invalid email or password. Please try again.",
       }));
     } finally {
       setIsSubmitting(false);
@@ -86,7 +100,7 @@ export default function LoginPage() {
       {/* Logo */}
       <div className="flex justify-center mb-8">
         <div
-          className="w-14 h-14 rounded-2xl flex items-center justify-center"
+          className="w-14 h-14 rounded-2xl flex items-center justify-center shrink-0"
           style={{
             background:
               "linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%)",
@@ -110,13 +124,13 @@ export default function LoginPage() {
       </div>
 
       {/* Success Message */}
-      {justRegistered && (
+      {showSuccess && (
         <div
-          className="flex items-center gap-3 p-4 rounded-xl mt-4"
+          className="flex items-center gap-3 p-4 rounded-xl mt-4 animate-fade-in"
           style={{ background: "var(--success-light)" }}
         >
           <CheckCircle2
-            className="w-5 h-5 flex-shrink-0"
+            className="w-5 h-5 shrink-0"
             style={{ color: "var(--success)" }}
           />
           <p className="text-sm" style={{ color: "var(--success)" }}>
@@ -161,6 +175,7 @@ export default function LoginPage() {
               color: "var(--foreground)",
             }}
             placeholder="you@company.com"
+            autoComplete="email"
             onFocus={(e) =>
               (e.currentTarget.style.boxShadow = "0 0 0 2px var(--primary-100)")
             }
@@ -175,7 +190,7 @@ export default function LoginPage() {
 
         {/* Password */}
         <div className="space-y-1.5">
-          <div className="flex items-center justify-between">
+          <div className="flex justify-between items-center">
             <label
               className="text-sm font-medium"
               style={{ color: "var(--foreground)" }}
@@ -184,7 +199,7 @@ export default function LoginPage() {
             </label>
             <Link
               href="/auth/forgot-password"
-              className="text-sm hover:underline"
+              className="text-xs font-medium hover:underline"
               style={{ color: "var(--primary)" }}
             >
               Forgot password?
@@ -204,6 +219,7 @@ export default function LoginPage() {
               color: "var(--foreground)",
             }}
             placeholder="••••••••"
+            autoComplete="current-password"
             onFocus={(e) =>
               (e.currentTarget.style.boxShadow = "0 0 0 2px var(--primary-100)")
             }
@@ -215,6 +231,22 @@ export default function LoginPage() {
             </p>
           )}
         </div>
+
+        {/* Remember Me
+        <div className="flex items-center gap-2">
+          <input
+            name="rememberMe"
+            type="checkbox"
+            checked={formData.rememberMe}
+            onChange={handleChange}
+            disabled={isLoading}
+            className="w-4 h-4 rounded accent-teal-600"
+          />
+          <label className="text-sm" style={{ color: "var(--foreground-muted)" }}>
+            Keep me signed in
+          </label>
+        </div>
+        */}
 
         {/* Submit Button */}
         <button
@@ -233,7 +265,7 @@ export default function LoginPage() {
               Signing in...
             </>
           ) : (
-            "Sign in"
+            "Sign In"
           )}
         </button>
       </form>
@@ -248,8 +280,19 @@ export default function LoginPage() {
           className="font-semibold hover:underline"
           style={{ color: "var(--primary)" }}
         >
-          Sign up
+          Create account
         </Link>
+      </div>
+
+      {/* Demo Accounts Notice */}
+      <div
+        className="mt-6 p-4 rounded-xl text-center"
+        style={{ background: "var(--background-secondary)" }}
+      >
+        <p className="text-xs" style={{ color: "var(--foreground-muted)" }}>
+          <strong>Demo Mode:</strong> Use any email with password
+          &quot;password123&quot;
+        </p>
       </div>
     </>
   );

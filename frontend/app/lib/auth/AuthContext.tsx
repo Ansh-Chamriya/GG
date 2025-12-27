@@ -13,8 +13,9 @@ import {
   UserRole,
   LoginRequest,
   RegisterRequest,
-  authService,
+  ROLE_LABELS,
 } from "@/app/lib/api";
+import { authService } from "@/app/lib/api/services";
 
 // ============ TYPES ============
 interface AuthContextType {
@@ -25,24 +26,33 @@ interface AuthContextType {
   register: (data: RegisterRequest) => Promise<void>;
   logout: () => Promise<void>;
   refreshUser: () => Promise<void>;
+  hasPermission: (permission: string) => boolean;
+  getUserDisplayName: () => string;
 }
 
 // ============ CONTEXT ============
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 // ============ ROLE-BASED ROUTES ============
+// Maps each role to their default dashboard
 const roleHomeRoutes: Record<UserRole, string> = {
-  "super-admin": "/dashboard/super-admin",
+  super_admin: "/dashboard/super-admin",
   admin: "/dashboard/admin",
   manager: "/dashboard/manager",
   technician: "/dashboard/technician",
+  operator: "/dashboard/operator",
+  viewer: "/dashboard/viewer",
 };
 
+// Routes that don't require authentication
 const publicRoutes = [
   "/",
   "/auth/login",
   "/auth/sign-up",
   "/auth/forgot-password",
+  "/auth/reset-password",
+  "/auth/verify-email",
+  "/dashboard", // Redirect page
 ];
 
 // ============ PROVIDER ============
@@ -57,28 +67,27 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     const initAuth = async () => {
       try {
         const storedUser = localStorage.getItem("user");
-        const accessToken = localStorage.getItem("accessToken");
+        const accessToken = localStorage.getItem("access_token");
 
         if (storedUser && accessToken) {
-          // Verify token is still valid by fetching user
+          // Try to verify token by fetching current user
           try {
             const response = await authService.getMe();
             if (response.success && response.data) {
               setUser(response.data);
               localStorage.setItem("user", JSON.stringify(response.data));
+            } else {
+              // Token may be invalid, try to refresh
+              await attemptTokenRefresh();
             }
           } catch {
-            // Token invalid, use stored user data for now
-            // In production, you might want to refresh the token
-            setUser(JSON.parse(storedUser));
+            // Token invalid, try refresh token
+            await attemptTokenRefresh();
           }
         }
       } catch (error) {
         console.error("Auth initialization error:", error);
-        // Clear invalid auth data
-        localStorage.removeItem("user");
-        localStorage.removeItem("accessToken");
-        localStorage.removeItem("refreshToken");
+        clearAuthData();
       } finally {
         setIsLoading(false);
       }
@@ -86,6 +95,42 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
     initAuth();
   }, []);
+
+  // Attempt to refresh the access token
+  const attemptTokenRefresh = async () => {
+    const refreshToken = localStorage.getItem("refresh_token");
+    if (!refreshToken) {
+      clearAuthData();
+      return;
+    }
+
+    try {
+      const response = await authService.refresh({
+        refresh_token: refreshToken,
+      });
+      if (response.success && response.data) {
+        localStorage.setItem("access_token", response.data.access_token);
+        // Fetch user data with new token
+        const userResponse = await authService.getMe();
+        if (userResponse.success && userResponse.data) {
+          setUser(userResponse.data);
+          localStorage.setItem("user", JSON.stringify(userResponse.data));
+        }
+      } else {
+        clearAuthData();
+      }
+    } catch {
+      clearAuthData();
+    }
+  };
+
+  // Clear all auth data
+  const clearAuthData = () => {
+    localStorage.removeItem("user");
+    localStorage.removeItem("access_token");
+    localStorage.removeItem("refresh_token");
+    setUser(null);
+  };
 
   // Redirect based on auth state and role
   useEffect(() => {
@@ -98,7 +143,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     if (!user && !isPublicRoute) {
       // Not logged in and trying to access protected route
       router.push("/auth/login");
-    } else if (user && pathname.startsWith("/auth/")) {
+    } else if (
+      user &&
+      pathname.startsWith("/auth/") &&
+      !pathname.includes("verify-email")
+    ) {
       // Logged in but on auth page - redirect to role-based dashboard
       router.push(roleHomeRoutes[user.role]);
     } else if (user && pathname === "/dashboard") {
@@ -114,17 +163,24 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         const response = await authService.login(credentials);
 
         if (response.success && response.data) {
-          const { user: userData, accessToken, refreshToken } = response.data;
+          const { access_token, refresh_token } = response.data;
 
-          // Store auth data
-          localStorage.setItem("user", JSON.stringify(userData));
-          localStorage.setItem("accessToken", accessToken);
-          localStorage.setItem("refreshToken", refreshToken);
+          // Store tokens first
+          localStorage.setItem("access_token", access_token);
+          localStorage.setItem("refresh_token", refresh_token);
 
-          setUser(userData);
+          // Now fetch user data with the new token
+          const userResponse = await authService.getMe();
+          if (userResponse.success && userResponse.data) {
+            const userData = userResponse.data as User;
+            localStorage.setItem("user", JSON.stringify(userData));
+            setUser(userData);
 
-          // Redirect to role-based dashboard
-          router.push(roleHomeRoutes[userData.role]);
+            // Redirect to role-based dashboard
+            router.push(roleHomeRoutes[userData.role]);
+          } else {
+            throw new Error("Failed to fetch user profile");
+          }
         } else {
           throw new Error(response.error || "Login failed");
         }
@@ -144,9 +200,27 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         setIsLoading(true);
         const response = await authService.register(data);
 
-        if (response.success) {
-          // After registration, redirect to login
-          router.push("/auth/login?registered=true");
+        if (response.success && response.data) {
+          // Backend returns tokens on successful registration
+          const { access_token, refresh_token } = response.data;
+
+          // Store tokens
+          localStorage.setItem("access_token", access_token);
+          localStorage.setItem("refresh_token", refresh_token);
+
+          // Fetch user data
+          const userResponse = await authService.getMe();
+          if (userResponse.success && userResponse.data) {
+            const userData = userResponse.data as User;
+            localStorage.setItem("user", JSON.stringify(userData));
+            setUser(userData);
+
+            // Redirect to role-based dashboard
+            router.push(roleHomeRoutes[userData.role]);
+          } else {
+            // If we can't get user data, redirect to login
+            router.push("/auth/login?registered=true");
+          }
         } else {
           throw new Error(response.error || "Registration failed");
         }
@@ -162,16 +236,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const logout = useCallback(async () => {
     try {
-      // Call logout endpoint
+      // Call logout endpoint to invalidate server session
       await authService.logout();
     } catch (error) {
       console.error("Logout error:", error);
     } finally {
-      // Clear local storage regardless of API response
-      localStorage.removeItem("user");
-      localStorage.removeItem("accessToken");
-      localStorage.removeItem("refreshToken");
-      setUser(null);
+      clearAuthData();
       router.push("/auth/login");
     }
   }, [router]);
@@ -188,6 +258,79 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   }, []);
 
+  // Check if user has a specific permission
+  // This is a simplified check - the actual permission check happens on backend
+  const hasPermission = useCallback(
+    (permission: string): boolean => {
+      if (!user) return false;
+
+      // Super admin has all permissions
+      if (user.role === "super_admin") return true;
+
+      // For now, we'll use a simple role-based check
+      // In production, you might want to store permissions in the user object
+      const rolePermissions: Record<UserRole, string[]> = {
+        super_admin: ["*"],
+        admin: [
+          "organization:*",
+          "user:*",
+          "equipment:*",
+          "workorder:*",
+          "schedule:*",
+          "parts:*",
+          "report:*",
+        ],
+        manager: [
+          "equipment:*",
+          "workorder:*",
+          "schedule:*",
+          "parts:*",
+          "report:read",
+        ],
+        technician: [
+          "equipment:read",
+          "equipment:update",
+          "workorder:read",
+          "workorder:update",
+          "parts:read",
+          "parts:use",
+        ],
+        operator: [
+          "equipment:read",
+          "equipment:report_issue",
+          "workorder:create",
+          "workorder:read",
+        ],
+        viewer: [
+          "equipment:read",
+          "workorder:read",
+          "schedule:read",
+          "parts:read",
+          "report:read",
+        ],
+      };
+
+      const userPermissions = rolePermissions[user.role] || [];
+
+      // Check exact match
+      if (userPermissions.includes(permission)) return true;
+
+      // Check wildcard
+      const [resource] = permission.split(":");
+      if (userPermissions.includes(`${resource}:*`)) return true;
+      if (userPermissions.includes("*")) return true;
+
+      return false;
+    },
+    [user]
+  );
+
+  // Get user display name
+  const getUserDisplayName = useCallback((): string => {
+    if (!user) return "User";
+    return `${user.first_name} ${user.last_name}`.trim() || user.email;
+  }, [user]);
+
   const value: AuthContextType = {
     user,
     isLoading,
@@ -196,6 +339,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     register,
     logout,
     refreshUser,
+    hasPermission,
+    getUserDisplayName,
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
@@ -229,7 +374,21 @@ export function useRequireRole(allowedRoles: UserRole[]) {
   };
 }
 
+// ============ PERMISSION HOOK ============
+export function usePermission(permission: string) {
+  const { hasPermission, isLoading } = useAuth();
+  return {
+    hasPermission: hasPermission(permission),
+    isLoading,
+  };
+}
+
 // ============ ROLE-BASED REDIRECT HELPER ============
 export function getRoleBasedRoute(role: UserRole): string {
   return roleHomeRoutes[role];
+}
+
+// ============ ROLE LABEL HELPER ============
+export function getRoleLabel(role: UserRole): string {
+  return ROLE_LABELS[role] || role;
 }

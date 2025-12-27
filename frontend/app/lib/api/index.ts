@@ -1,4 +1,4 @@
-// Re-export everything from a single entry point
+// Re-export everything for easy imports
 export * from "./config";
 export * from "./client";
 export * from "./services";
